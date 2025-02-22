@@ -1,0 +1,27 @@
+const express = require('express')
+const router = express.Router()
+
+
+
+const {
+    getAllLaporan,
+    getParkirById,
+    addLaporan,
+    updateLaporan,
+
+
+} = require ("../controllers/parkirliar.controller")
+
+const {verifyUser, isUser} = require('../middleware/auth.router')
+const upload = require('../middleware/upload')
+
+router.get("/parkir/:idPengguna", verifyUser, isUser, getAllLaporan)
+router.get("/parkir/detail/:id", verifyUser, isUser,  getParkirById)
+router.post("/parkir",  verifyUser, isUser,  upload.single('bukti'), addLaporan);
+router.patch("/parkir/:id", verifyUser, isUser, upload.single('bukti'), updateLaporan )
+
+const {checkParkirStatus} = require('../controllers/parkirliar.controller')
+router.get("/parkir/status/:id", verifyUser, isUser,  checkParkirStatus)
+
+
+module.exports = router
