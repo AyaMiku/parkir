@@ -78,6 +78,47 @@ module.exports = {
         }
     },
 
+    updateLaporan: async (req, res) => {
+        const { jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari } = req.body;
+        const id = req.params.id;
+        let bukti;
+
+        try {
+            const laporan = await client.query("SELECT bukti FROM parkir_liar WHERE id = $1", [id]);
+            if (laporan.rows.length === 0) {
+                return res.status(404).json({ message: "Laporan tidak ditemukan" });
+            }
+            bukti = laporan.rows[0].bukti;
+
+            if (req.file) {
+                if (bukti) {
+                    const publicId = bukti.split('/').slice(-2).join('/').split('.')[0];
+                    await cloudinary.uploader.destroy(publicId);
+                }
+                const uploadResult = await new Promise((resolve, reject) => {
+                    cloudinary.uploader.upload_stream(
+                        { folder: 'parkir_liar', resource_type: 'auto' },
+                        (error, result) => {
+                            if (error) return reject(error);
+                            resolve(result.secure_url);
+                        }
+                    ).end(req.file.buffer);
+                });
+                bukti = uploadResult;
+            }
+
+            await client.query(
+                "UPDATE parkir_liar SET jenis_kendaraan = $1, tanggaldanwaktu = $2, latitude = $3, longitude = $4, lokasi = $5, status = $6, deskripsi_masalah = $7, hari = $8, bukti = $9 WHERE id = $10",
+                [jenis_kendaraan, new Date(tanggaldanwaktu), parseFloat(latitude), parseFloat(longitude), lokasi, status, deskripsi_masalah, hari, bukti, id]
+            );
+
+            res.status(200).json({ message: "Laporan Berhasil Diupdate" });
+        } catch (error) {
+            console.error("Error updating laporan:", error);
+            res.status(400).json({ message: error.message });
+        }
+    },
+
     checkParkirStatus: async (req, res) => {
         try {
             const { id } = req.params;

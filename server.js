@@ -5,7 +5,6 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const cloudinary = require('cloudinary').v2;
 const morgan = require('morgan');
-const { none } = require('./middleware/upload');
 
 dotenv.config();
 
@@ -13,9 +12,6 @@ const { Client } = require('pg');
 
 const client = new Client({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
 });
 
 client.connect()
@@ -32,14 +28,9 @@ cloudinary.config({
 // Middleware
 server.use(morgan('tiny'));
 
+server.use(cors());
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }))
-
-
-server.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true,
-}));
 
 // Router
 server.use(allRouter);

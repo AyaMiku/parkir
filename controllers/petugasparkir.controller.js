@@ -75,6 +75,56 @@ module.exports = {
         }
     },
 
+    updatePetugas: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status } = req.body;
+            const userId = authenticateToken(req);
+    
+            // Cek apakah petugas ada dan milik pengguna yang sesuai
+            const petugas = await client.query("SELECT * FROM petugas_parkir WHERE id = $1 AND idPengguna = $2", [id, userId]);
+    
+            if (petugas.rows.length === 0) {
+                return res.status(404).json({ message: "Petugas tidak ditemukan atau bukan milik Anda" });
+            }
+    
+            let fotoBukti = petugas.rows[0].bukti;
+    
+            // Jika ada gambar baru, upload ke Cloudinary
+            if (req.file) {
+                const uploadResult = await new Promise((resolve, reject) => {
+                    cloudinary.uploader.upload_stream(
+                        { folder: 'petugas_parkir', resource_type: 'auto' },
+                        (error, result) => {
+                            if (error) return reject(error);
+                            resolve(result.secure_url);
+                        }
+                    ).end(req.file.buffer);
+                });
+    
+                // Hapus gambar lama di Cloudinary
+                if (fotoBukti) {
+                    const publicId = fotoBukti.split('/').slice(-2).join('/').split('.')[0];
+                    await cloudinary.uploader.destroy(publicId);
+                }
+    
+                fotoBukti = uploadResult;
+            }
+    
+            // Update data petugas di database
+            await client.query(
+                "UPDATE petugas_parkir SET lokasi = $1, tanggaldanwaktu = $2, latitude = $3, longitude = $4, identitas_petugas = $5, hari = $6, status = $7, bukti = $8 WHERE id = $9",
+                [lokasi, new Date(tanggaldanwaktu), parseFloat(latitude), parseFloat(longitude), identitas_petugas, hari, status, fotoBukti, id]
+            );
+    
+            res.status(200).json({ message: "Data Petugas berhasil diperbarui", bukti: fotoBukti });
+        } catch (error) {
+            console.error("Error updating petugas:", error);
+            res.status(500).json({ message: "Gagal memperbarui data petugas", error: error.message });
+        }
+    },
+    
+
     deletePetugas: async (req, res) => {
         const { id } = req.params;
         try {
