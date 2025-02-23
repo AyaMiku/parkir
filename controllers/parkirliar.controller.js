@@ -1,14 +1,23 @@
 const cloudinary = require('cloudinary').v2;
 const { Pool } = require('pg');
+const jwt = require('jsonwebtoken');
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
 
+const authenticateToken = (req) => {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader) throw new Error("Token tidak tersedia");
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return decoded.userId;
+};
+
 module.exports = {
     getAllLaporan: async (req, res) => {
         try {
-            const idPengguna = req.session.idPengguna;
+            const idPengguna = authenticateToken(req);
             const laporan = (await pool.query("SELECT * FROM parkir_liar WHERE idPengguna = $1", [idPengguna])).rows;
             
             if (laporan.length === 0) {
@@ -40,8 +49,8 @@ module.exports = {
 
     addLaporan: async (req, res) => {
         try {
+            const idPengguna = authenticateToken(req);
             const { jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari } = req.body;
-            const idPengguna = req.session.idPengguna;
             
             if (!req.file) {
                 return res.status(400).json({ message: "Gambar tidak ditemukan." });
@@ -95,40 +104,27 @@ module.exports = {
         }
     },
 
-    updateLaporan: async (req, res) => {
+    deleteLaporan: async (req, res) => {
         try {
-            const laporan = (await pool.query("SELECT * FROM parkir_liar WHERE id = $1", [req.params.id])).rows[0];
-            if (!laporan) return res.status(404).json({ message: "Laporan Anda Tidak Ditemukan" });
+            const { id } = req.params;
+            const laporan = await pool.query("SELECT bukti FROM parkir_liar WHERE id = $1", [id]);
             
-            const { jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari } = req.body;
-            let bukti = laporan.bukti;
+            if (laporan.rows.length === 0) {
+                return res.status(404).json({ message: "Data laporan tidak ditemukan" });
+            }
 
-            if (req.file) {
-                if (bukti) {
-                    const publicId = bukti.split('/').slice(-2).join('/').split('.')[0];
-                    await cloudinary.uploader.destroy(publicId);
-                }
-                
-                const result = await new Promise((resolve, reject) => {
-                    cloudinary.uploader.upload_stream(
-                        { folder: 'parkir_liar', resource_type: 'auto' }, 
-                        (error, result) => {
-                            if (error) return reject(error);
-                            resolve(result.secure_url);
-                        }
-                    ).end(req.file.buffer);
-                });
-                bukti = result;
+            const bukti = laporan.rows[0].bukti;
+            await pool.query("DELETE FROM parkir_liar WHERE id = $1", [id]);
+            
+            if (bukti) {
+                const publicId = bukti.split('/').slice(-2).join('/').split('.')[0];
+                await cloudinary.uploader.destroy(publicId);
             }
             
-            await pool.query(
-                "UPDATE parkir_liar SET jenis_kendaraan = $1, tanggaldanwaktu = $2, latitude = $3, longitude = $4, lokasi = $5, status = $6, deskripsi_masalah = $7, hari = $8, bukti = $9 WHERE id = $10", 
-                [jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari, bukti, laporan.id]
-            );
-            
-            res.status(200).json({ message: "Laporan Berhasil Diupdate" });
+            res.status(200).json({ message: "Data laporan berhasil dihapus" });
         } catch (error) {
-            res.status(400).json({ message: error.message });
+            console.error("Error deleting laporan:", error);
+            res.status(500).json({ message: "Terjadi kesalahan saat menghapus data laporan" });
         }
     }
 };

@@ -1,7 +1,6 @@
 const express = require('express');
 const server = express();
 const allRouter = require('./routes');
-const session = require('express-session');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const cloudinary = require('cloudinary').v2;

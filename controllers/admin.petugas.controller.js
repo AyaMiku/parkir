@@ -1,14 +1,26 @@
+const { Client } = require('pg');
 const cloudinary = require('cloudinary').v2;
-const { Pool } = require('pg');
+const jwt = require('jsonwebtoken');
 
-const pool = new Pool({
+const client = new Client({
     connectionString: process.env.DATABASE_URL,
 });
+client.connect()
+    .then(() => console.log("Database connected"))
+    .catch(err => console.error("Database connection error:", err.stack));
+
+const authenticateToken = (req) => {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader) throw new Error("Token tidak tersedia");
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return decoded.userId;
+};
 
 module.exports = {
     getAllPetugas: async (req, res) => {
         try {
-            const result = await pool.query("SELECT lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti, status_post FROM petugas_parkir");
+            const result = await client.query("SELECT lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti FROM petugas_parkir");
             res.json({ message: "Sukses Mengambil Data Petugas", data: result.rows });
         } catch (error) {
             console.error("Error fetching data:", error);
@@ -18,7 +30,7 @@ module.exports = {
 
     getPetugasById: async (req, res) => {
         try {
-            const result = await pool.query(
+            const result = await client.query(
                 "SELECT p.lokasi, p.tanggaldanwaktu, p.latitude, p.longitude, p.identitas_petugas, p.hari, p.status, p.bukti, u.nama, u.username, u.email FROM petugas_parkir p LEFT JOIN users u ON p.idPengguna = u.id WHERE p.id = $1",
                 [req.params.id]
             );
@@ -33,14 +45,14 @@ module.exports = {
     },
 
     addPetugas: async (req, res) => {
-        const { lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status } = req.body;
-        const userId = req.session.userId;
-
-        if (!req.file) {
-            return res.status(400).json({ message: "Gambar tidak ditemukan." });
-        }
-
         try {
+            const userId = authenticateToken(req);
+            const { lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status } = req.body;
+            
+            if (!req.file) {
+                return res.status(400).json({ message: "Gambar tidak ditemukan." });
+            }
+
             const result = await new Promise((resolve, reject) => {
                 cloudinary.uploader.upload_stream(
                     { folder: 'petugas_parkir', resource_type: 'auto' },
@@ -51,7 +63,7 @@ module.exports = {
                 ).end(req.file.buffer);
             });
 
-            await pool.query(
+            await client.query(
                 "INSERT INTO petugas_parkir (lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti, idPengguna) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
                 [lokasi, new Date(tanggaldanwaktu), parseFloat(latitude), parseFloat(longitude), identitas_petugas, hari, status, result.secure_url, userId]
             );
@@ -63,57 +75,16 @@ module.exports = {
         }
     },
 
-    updatePetugas: async (req, res) => {
-        const { lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status } = req.body;
-        const id = req.params.id;
-        let bukti;
-
-        try {
-            const petugas = await pool.query("SELECT bukti FROM petugas_parkir WHERE id = $1", [id]);
-            if (petugas.rows.length === 0) {
-                return res.status(404).json({ message: "Petugas tidak ditemukan" });
-            }
-            bukti = petugas.rows[0].bukti;
-
-            if (req.file) {
-                if (bukti) {
-                    const publicId = bukti.split('/').slice(-2).join('/').split('.')[0];
-                    await cloudinary.uploader.destroy(publicId);
-                }
-                const uploadResult = await new Promise((resolve, reject) => {
-                    cloudinary.uploader.upload_stream(
-                        { folder: 'petugas_parkir', resource_type: 'auto' },
-                        (error, result) => {
-                            if (error) return reject(error);
-                            resolve(result.secure_url);
-                        }
-                    ).end(req.file.buffer);
-                });
-                bukti = uploadResult;
-            }
-
-            await pool.query(
-                "UPDATE petugas_parkir SET lokasi = $1, tanggaldanwaktu = $2, latitude = $3, longitude = $4, identitas_petugas = $5, hari = $6, status = $7, bukti = $8 WHERE id = $9",
-                [lokasi, new Date(tanggaldanwaktu), parseFloat(latitude), parseFloat(longitude), identitas_petugas, hari, status, bukti, id]
-            );
-
-            res.status(200).json({ message: "Petugas Berhasil Diupdate" });
-        } catch (error) {
-            console.error("Error updating petugas:", error);
-            res.status(400).json({ message: error.message });
-        }
-    },
-
     deletePetugas: async (req, res) => {
         const { id } = req.params;
         try {
-            const petugas = await pool.query("SELECT bukti FROM petugas_parkir WHERE id = $1", [id]);
+            const petugas = await client.query("SELECT bukti FROM petugas_parkir WHERE id = $1", [id]);
             if (petugas.rows.length === 0) {
                 return res.status(404).json({ message: "Data Petugas tidak ditemukan" });
             }
             const bukti = petugas.rows[0].bukti;
 
-            await pool.query("DELETE FROM petugas_parkir WHERE id = $1", [id]);
+            await client.query("DELETE FROM petugas_parkir WHERE id = $1", [id]);
             if (bukti) {
                 const publicId = bukti.split('/').slice(-2).join('/').split('.')[0];
                 await cloudinary.uploader.destroy(publicId);

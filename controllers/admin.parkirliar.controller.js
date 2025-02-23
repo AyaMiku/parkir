@@ -1,5 +1,6 @@
 const { Client } = require('pg');
 const cloudinary = require('cloudinary').v2;
+const jwt = require('jsonwebtoken');
 
 const client = new Client({
     connectionString: process.env.DATABASE_URL,
@@ -7,6 +8,14 @@ const client = new Client({
 client.connect()
     .then(() => console.log("Database connected"))
     .catch(err => console.error("Database connection error:", err.stack));
+
+const authenticateToken = (req) => {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader) throw new Error("Token tidak tersedia");
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    return decoded.userId;
+};
 
 module.exports = {
     getAllLaporan: async (req, res) => {
@@ -37,13 +46,13 @@ module.exports = {
 
     addLaporan: async (req, res) => {
         const { jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari } = req.body;
-        const userId = req.session.userId;
-
-        if (!req.file) {
-            return res.status(400).json({ message: "Gambar tidak ditemukan." });
-        }
-
         try {
+            const userId = authenticateToken(req);
+            
+            if (!req.file) {
+                return res.status(400).json({ message: "Gambar tidak ditemukan." });
+            }
+
             const result = await new Promise((resolve, reject) => {
                 cloudinary.uploader.upload_stream(
                     { folder: 'parkir_liar', resource_type: 'auto' },
