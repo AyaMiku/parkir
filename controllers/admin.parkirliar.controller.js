@@ -3,7 +3,7 @@ const cloudinary = require('cloudinary').v2;
 
 const client = new Client({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL.includes("localhost") ? false : { rejectUnauthorized: false },
+     ,
 });
 client.connect()
     .then(() => console.log("Database connected"))
