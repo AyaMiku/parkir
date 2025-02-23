@@ -4,8 +4,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-     
+    connectionString: process.env.DATABASE_URL,  
 });
 
 module.exports = {
