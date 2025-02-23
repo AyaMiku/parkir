@@ -1,204 +1,131 @@
-const cloudinary = require('cloudinary').v2
-const model = require('../models')
-const {User} = model
-const {parkir_liar} = model
+const { Client } = require('pg');
+const cloudinary = require('cloudinary').v2;
 
-module.exports ={
+const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL.includes("localhost") ? false : { rejectUnauthorized: false },
+});
+client.connect()
+    .then(() => console.log("Database connected"))
+    .catch(err => console.error("Database connection error:", err.stack));
 
-    getAllLaporan: async (req, res)=>{
-        const laporan = await parkir_liar.findAll({
-            attributes: ["jenis_kendaraan", "tanggaldanwaktu", "latitude", "longitude", "lokasi", "deskripsi_masalah","hari","bukti"],
-            
-        })
-        res.json({
-            message: "Sukses Mengambil Data Laporan",
-            data: laporan
-        })
-
-    },
-
-    getLaporanById: async (req, res)=>{
-        const laporan = await parkir_liar.findOne({
-            where :{
-                id: req.params.id
-            },
-            attributes: ["jenis_kendaraan", "tanggaldanwaktu", "latitude", "longitude", "lokasi", "deskripsi_masalah","hari","bukti"],
-            include: {
-                model: User,
-                as: 'user',
-                attributes: ["nama", "username", "email"]
-            }
-        })
-        res.json({
-            message: "Sukses Mengambil Data Laporan",
-            data: laporan
-        })
-
-    },
-
-
-    addLaporan: async (req, res) => {
-        const { jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari } = req.body;
-        console.log("Received body:", req.body);
-        console.log("Received file:", req.file);
+module.exports = {
+    getAllLaporan: async (req, res) => {
         try {
-            const userId = req.session.userId;
-    
-            // Periksa apakah file gambar ada
-            if (!req.file) {
-                return res.status(400).json({ message: "Gambar tidak ditemukan." });
-            }
-    
-            
-            console.log("Uploading to Cloudinary...");
-            
-            const result = await new Promise((resolve, reject) => {
-            const uploadStream = cloudinary.uploader.upload_stream(
-                { folder: 'parkir_liar', resource_type: 'auto' }, 
-                (error, result) => {
-                    if (error) return reject(error);
-                    resolve(result);
-                }
-            );
-
-            
-            uploadStream.end(req.file.buffer); 
-        });
-    
-            console.log("Upload successful:", result); 
-            await parkir_liar.create({
-                jenis_kendaraan: jenis_kendaraan,
-                tanggaldanwaktu: new Date(tanggaldanwaktu),
-                latitude: parseFloat(latitude),
-                longitude: parseFloat(longitude),
-                lokasi: lokasi,
-                status: status,
-                deskripsi_masalah: deskripsi_masalah,
-                hari: hari,
-                bukti: result.secure_url,
-                idUser: userId
-            });
-    
-            res.status(201).json({
-                message: "Berhasil Menambahkan Laporan",
-                gambarUrl: result.secure_url 
-            });
-    
+            const result = await client.query("SELECT jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, deskripsi_masalah, hari, bukti FROM parkir_liar");
+            res.json({ message: "Sukses Mengambil Data Laporan", data: result.rows });
         } catch (error) {
-            console.error("Terjadi kesalahan saat menambahkan laporan:", error); 
-            res.status(500).json({
-                message: "Gagal Menambahkan Laporan",
-                error: error.message 
-            });
+            console.error("Error fetching data:", error);
+            res.status(500).json({ message: "Gagal mengambil data laporan" });
         }
     },
 
-
-    updateLaporan: async (req, res) =>{
-        const laporan = await parkir_liar.findOne({
-            where: {
-                id: req.params.id
+    getLaporanById: async (req, res) => {
+        try {
+            const result = await client.query(
+                "SELECT p.jenis_kendaraan, p.tanggaldanwaktu, p.latitude, p.longitude, p.lokasi, p.deskripsi_masalah, p.hari, p.bukti, u.nama, u.username, u.email FROM parkir_liar p LEFT JOIN users u ON p.idUser = u.id WHERE p.id = $1",
+                [req.params.id]
+            );
+            if (result.rows.length === 0) {
+                return res.status(404).json({ message: "Data tidak ditemukan" });
             }
-        })
-        if(!laporan) return res.status(404).json({
-            message: "Laporan Anda Tidak Ditemukan"
-        })
+            res.json({ message: "Sukses Mengambil Data Laporan", data: result.rows[0] });
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            res.status(500).json({ message: "Gagal mengambil data laporan" });
+        }
+    },
 
-        const { jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi,status, deskripsi_masalah, hari, } = req.body;
-        let bukti = laporan.bukti; 
+    addLaporan: async (req, res) => {
+        const { jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari } = req.body;
+        const userId = req.session.userId;
 
-    try {
-        
-        if (req.file) {
-            console.log("Menerima file baru untuk diupload:", req.file);
+        if (!req.file) {
+            return res.status(400).json({ message: "Gambar tidak ditemukan." });
+        }
 
-            if (bukti) {
-                const publicId = bukti.split('/').slice(-2).join('/').split('.')[0];
-                console.log("Deleting old image with publicId:", publicId);
-                
- 
-                await cloudinary.uploader.destroy(publicId);
-            }
-
+        try {
             const result = await new Promise((resolve, reject) => {
                 cloudinary.uploader.upload_stream(
                     { folder: 'parkir_liar', resource_type: 'auto' },
                     (error, result) => {
-                        if (error) {
-                            console.error("Error saat upload:", error);
-                            return reject(error);
-                        }
-                        console.log("Upload result:", result);
-                        resolve(result.secure_url);
+                        if (error) return reject(error);
+                        resolve(result);
                     }
                 ).end(req.file.buffer);
             });
-            bukti = result; 
-        }
 
+            await client.query(
+                "INSERT INTO parkir_liar (jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari, bukti, idUser) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+                [jenis_kendaraan, new Date(tanggaldanwaktu), parseFloat(latitude), parseFloat(longitude), lokasi, status, deskripsi_masalah, hari, result.secure_url, userId]
+            );
 
-
-            await parkir_liar.update({
-            jenis_kendaraan: jenis_kendaraan,
-            tanggaldanwaktu: new Date(tanggaldanwaktu), 
-            latitude: parseFloat(latitude), 
-            longitude: parseFloat(longitude), 
-            lokasi: lokasi,
-            status: status,
-            deskripsi_masalah: deskripsi_masalah, 
-            hari: hari,
-            bukti: bukti
-            },{
-                where:{
-                    id: laporan.id
-                }
-            })
-            res.status(200).json({
-                message: "Laporan Berhasil Diupdate"
-            })
+            res.status(201).json({ message: "Berhasil Menambahkan Laporan", gambarUrl: result.secure_url });
         } catch (error) {
-            res.status(400).json({
-                message: error.message
-            })
-            
+            console.error("Terjadi kesalahan saat menambahkan laporan:", error);
+            res.status(500).json({ message: "Gagal Menambahkan Laporan", error: error.message });
         }
-
-        
     },
 
-    deleteParkir : async (req, res) => {
-        const { id } = req.params; 
-    
+    updateLaporan: async (req, res) => {
+        const { jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari } = req.body;
+        const id = req.params.id;
+        let bukti;
+
         try {
-
-            
-            
-            const parkirEntry = await parkir_liar.findOne({
-                where: { id } 
-            });
-    
-            if (!parkirEntry) {
-                return res.status(404).json({ message: 'Data Parkir tidak ditemukan' });
+            const laporan = await client.query("SELECT bukti FROM parkir_liar WHERE id = $1", [id]);
+            if (laporan.rows.length === 0) {
+                return res.status(404).json({ message: "Laporan tidak ditemukan" });
             }
-    
-            // Hapus entri parkir
-            await parkirEntry.destroy();
+            bukti = laporan.rows[0].bukti;
 
-            let bukti = parkirEntry.bukti
+            if (req.file) {
+                if (bukti) {
+                    const publicId = bukti.split('/').slice(-2).join('/').split('.')[0];
+                    await cloudinary.uploader.destroy(publicId);
+                }
+                const uploadResult = await new Promise((resolve, reject) => {
+                    cloudinary.uploader.upload_stream(
+                        { folder: 'parkir_liar', resource_type: 'auto' },
+                        (error, result) => {
+                            if (error) return reject(error);
+                            resolve(result.secure_url);
+                        }
+                    ).end(req.file.buffer);
+                });
+                bukti = uploadResult;
+            }
+
+            await client.query(
+                "UPDATE parkir_liar SET jenis_kendaraan = $1, tanggaldanwaktu = $2, latitude = $3, longitude = $4, lokasi = $5, status = $6, deskripsi_masalah = $7, hari = $8, bukti = $9 WHERE id = $10",
+                [jenis_kendaraan, new Date(tanggaldanwaktu), parseFloat(latitude), parseFloat(longitude), lokasi, status, deskripsi_masalah, hari, bukti, id]
+            );
+
+            res.status(200).json({ message: "Laporan Berhasil Diupdate" });
+        } catch (error) {
+            console.error("Error updating laporan:", error);
+            res.status(400).json({ message: error.message });
+        }
+    },
+
+    deleteParkir: async (req, res) => {
+        const { id } = req.params;
+        try {
+            const laporan = await client.query("SELECT bukti FROM parkir_liar WHERE id = $1", [id]);
+            if (laporan.rows.length === 0) {
+                return res.status(404).json({ message: "Data Parkir tidak ditemukan" });
+            }
+            const bukti = laporan.rows[0].bukti;
+
+            await client.query("DELETE FROM parkir_liar WHERE id = $1", [id]);
             if (bukti) {
                 const publicId = bukti.split('/').slice(-2).join('/').split('.')[0];
-                console.log("Deleting old image with publicId:", publicId);
-                
- 
                 await cloudinary.uploader.destroy(publicId);
             }
-    
-            // Kirim respons sukses
-            return res.status(200).json({ message: 'Data Parkir berhasil dihapus' });
+            res.status(200).json({ message: "Data Parkir berhasil dihapus" });
         } catch (error) {
-            console.error('Error deleting parkir:', error);
-            return res.status(500).json({ message: 'Terjadi kesalahan saat menghapus data parkir' });
+            console.error("Error deleting parkir:", error);
+            res.status(500).json({ message: "Terjadi kesalahan saat menghapus data parkir" });
         }
-
     }
-}
+};

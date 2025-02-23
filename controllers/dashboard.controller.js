@@ -1,55 +1,34 @@
-const model = require('../models');
-const { User, petugas_parkir, parkir_liar } = model;
+const cloudinary = require('cloudinary').v2;
+const { Pool } = require('pg');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL.includes("localhost") ? false : { rejectUnauthorized: false }
+});
 
 module.exports = {
     getDashboard: async (req, res) => {
         try {
-            const userCount = await User.count();
-
-            const approvePetugasCount = await petugas_parkir.count({
-                where: { status_post: 'Approve' } 
-            });
-
+            const userCount = (await pool.query("SELECT COUNT(*) FROM users")).rows[0].count;
+            const approvePetugasCount = (await pool.query("SELECT COUNT(*) FROM petugas_parkir WHERE status_post = 'Approve'" )).rows[0].count;
+            const approveParkirCount = (await pool.query("SELECT COUNT(*) FROM parkir_liar WHERE status_post = 'Approve'" )).rows[0].count;
             
-            const approveParkirCount = await parkir_liar.count({
-                where: { status_post: 'Approve' }
-            });
+            const totalApprove = parseInt(approvePetugasCount) + parseInt(approveParkirCount);
+            const laporanPetugasCount = (await pool.query("SELECT COUNT(*) FROM petugas_parkir" )).rows[0].count;
+            const laporanParkirCount = (await pool.query("SELECT COUNT(*) FROM parkir_liar" )).rows[0].count;
 
-            
-            const totalApprove = approveParkirCount + approvePetugasCount;
+            const dataPetugas = (await pool.query("SELECT latitude, longitude FROM petugas_parkir WHERE status_post = 'Approve'" )).rows;
+            const dataParkir = (await pool.query("SELECT latitude, longitude FROM parkir_liar WHERE status_post = 'Approve'" )).rows;
 
-            const laporanPetugasCount = await petugas_parkir.count();
-            const laporanParkirCount = await parkir_liar.count();
-
-            const dataPetugas = await petugas_parkir.findAll({
-                where:{status_post: 'Approve'},
-                attributes: ['latitude', 'longitude']
-            })
-
-            const dataParkir = await parkir_liar.findAll({
-                where: {status_post: 'Approve'},
-                attributes: ['latitude', 'longitude']
-            })
-
-            const formattedPetugasData = dataPetugas.map(item => ({
-                latitude: item.latitude,
-                longitude: item.longitude
-            }));
-
-            const formattedParkirData = dataParkir.map(item => ({
-                latitude: item.latitude,
-                longitude: item.longitude
-            }));
-
-            
             res.json({
                 userCount,
                 totalApprove,
                 laporanPetugasCount,
                 laporanParkirCount,
-                formattedPetugasData,
-                formattedParkirData
-
+                formattedPetugasData: dataPetugas,
+                formattedParkirData: dataParkir
             });
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
