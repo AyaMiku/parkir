@@ -28,7 +28,13 @@ cloudinary.config({
 // Middleware
 server.use(morgan('tiny'));
 
-server.use(cors());
+server.use(cors({
+  origin: 'https://parkir-production.up.railway.app/', // Pastikan FRONTEND_URL ada di .env
+  methods: 'GET,POST,PUT,DELETE',
+  allowedHeaders: 'Content-Type,Authorization',
+  credentials: true,
+}));
+
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }))
 
