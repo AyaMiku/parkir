@@ -1,54 +1,33 @@
 const express = require('express');
-const server = express();
 const allRouter = require('./routes');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const cloudinary = require('cloudinary').v2;
-const morgan = require('morgan');
-
-dotenv.config();
-
-const { Client } = require('pg');
-
-const client = new Client({
-  connectionString: process.env.DATABASE_URL,
-});
-
-client.connect()
-  .then(() => console.log("Database connected"))
-  .catch(err => console.error("Database connection error:", err.stack));
-
-// Konfigurasi Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME,
-  api_key: process.env.API_KEY,
-  api_secret: process.env.API_SECRET
-});
-
-// Middleware
-server.use(morgan('tiny'));
-
-server.use(cors({
-  origin: ['https://parkir-production.up.railway.app, http://127.0.0.1:5500'],
-  methods: 'GET,POST,PUT,DELETE',
-  allowedHeaders: 'Content-Type,Authorization',
-  credentials: true,
-}));
-
-server.use(express.json());
-server.use(express.urlencoded({ extended: true }))
-
-// Router
-server.use(allRouter);
 
 // Route untuk home
-server.get('/', (req, res) => {
+app.get('/', (req, res) => {
   res.send("<h1>Home</h1>");
 });
 
-const PORT = 3000;
+app.use(allRouter);
 
-// Jalankan server
-server.listen(PORT, () => {
-  console.log("Server running on port", PORT);
+dotenv.config();
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
+app.get('/test-db', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT NOW()');
+    res.json({ message: 'Database connected', time: result.rows[0].now });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Database connection failed', error: error.message });
+  }
 });
