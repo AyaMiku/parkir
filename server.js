@@ -29,7 +29,7 @@ cloudinary.config({
 server.use(morgan('tiny'));
 
 server.use(cors({
-  origin: 'https://parkir-production.up.railway.app/', // Pastikan FRONTEND_URL ada di .env
+  origin: 'https://parkir-production.up.railway.app',
   methods: 'GET,POST,PUT,DELETE',
   allowedHeaders: 'Content-Type,Authorization',
   credentials: true,
