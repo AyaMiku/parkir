@@ -65,7 +65,7 @@ module.exports = {
                 return res.status(400).json({ message: "Email dan password harus diisi." });
             }
 
-            const user = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+            const user = await pool.query(`SELECT * FROM "Users" WHERE email = $1`, [email]);
             if (user.rows.length === 0) {
                 return res.status(404).json({ message: "Email Anda belum terdaftar" });
             }
@@ -87,7 +87,7 @@ module.exports = {
     isME: async (req, res) => {
         try {
             const decoded = authenticateToken(req);
-            const user = await pool.query("SELECT nama, email, jenis_kelamin, username, foto_profil, role FROM users WHERE id = $1", [decoded.id]);
+            const user = await pool.query(`SELECT nama, email, jenis_kelamin, username, foto_profil, role FROM "Users" WHERE id = $1`, [decoded.id]);
             if (user.rows.length === 0) {
                 return res.status(404).json({ message: "User tidak ditemukan" });
             }
