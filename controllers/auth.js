@@ -25,7 +25,7 @@ module.exports = {
                 return res.status(400).json({ message: "Password tidak boleh kosong" });
             }
 
-            const existingUser = await pool.query("SELECT * FROM users WHERE email = $1 OR username = $2", [email, username]);
+            const existingUser = await pool.query('SELECT * FROM "Users" WHERE email = $1 OR username = $2', [email, username]);
             if (existingUser.rows.length > 0) {
                 return res.status(400).json({ message: "Email atau Username sudah terdaftar" });
             }
@@ -44,8 +44,12 @@ module.exports = {
                 fotoProfilUrl = uploadResult;
             }
 
-            await pool.query("INSERT INTO users (nama, email, jenis_kelamin, username, password, foto_profil, role) VALUES ($1, $2, $3, $4, $5, $6, $7)", 
-                [nama, email, jenis_kelamin, username, hashPassword, fotoProfilUrl, role]);
+            await pool.query(
+                `INSERT INTO "Users" (nama, email, jenis_kelamin, username, password, foto_profil, role, "createdAt") 
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+                [nama, email, jenis_kelamin, username, hashPassword, fotoProfilUrl, role]
+            );
+            
 
             res.status(201).json({ message: "Berhasil Register", gambarUrl: fotoProfilUrl });
         } catch (error) {
