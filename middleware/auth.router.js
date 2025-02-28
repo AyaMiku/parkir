@@ -73,8 +73,10 @@ const verifyUser = async (req, res, next) => {
 
         // ✅ User valid, simpan ke `req`
         const user = result.rows[0];
-        req.idPengguna = user.id;
-        req.role = user.role;
+        req.user = {
+            id: user.id,
+            role: user.role
+        }
         console.log(`✅ User Authenticated: ID = ${req.idPengguna}, Role = ${req.role}`);
 
         next();
