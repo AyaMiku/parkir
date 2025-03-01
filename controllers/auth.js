@@ -20,7 +20,7 @@ const pool = new Pool({
 module.exports = {
     Register: async (req, res) => {
         try {
-            const { nama, email, jenis_kelamin, username, password, role } = req.body;
+            const { nama, email, jenis_kelamin, username, password } = req.body;
 
             // 🔹 Validasi input
             if (!nama || !email || !username || !password) {
@@ -34,6 +34,16 @@ module.exports = {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
                 return res.status(400).json({ message: "Format email tidak valid" });
+            }
+
+            const usernameRegex = /^[a-zA-Z0-9_]+&/;
+            if (!usernameRegex.test(username)) {
+                return res.status(400).json({ message: "Username hanya boleh berisi huruf, angka dan underscore" })
+            }
+
+            const validGender = ["Laki-laki", "Perempuan"];
+            if (!validGender.includes(jenis_kelamin)) {
+                return res.status(400).json({ message: "Jenis kelamin tidak valid" });
             }
 
             // 🔹 Cek apakah email atau username sudah terdaftar
@@ -62,14 +72,15 @@ module.exports = {
                 }
             }
 
-            // 🔹 Masukkan user ke database
-            await pool.query(
+            const userRole = 'user';
+
+            const newUser = await pool.query(
                 `INSERT INTO "Users" (nama, email, jenis_kelamin, username, password, foto_profil, role, "createdAt") 
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
-                [nama, email, jenis_kelamin, username, hashPassword, fotoProfilUrl, role || 'user']
+                VALUES ($1, $2, $3, $4, $5, $6, $7, NOW()) RETURNING id, nama, email, username, foto_profil, role, "createdAt"`,
+                [nama, email, jenis_kelamin, username, hashPassword, fotoProfilUrl, userRole]
             );
 
-            res.status(201).json({ message: "Berhasil Register", fotoProfil: fotoProfilUrl });
+            res.status(201).json({ message: "Berhasil register", user: newUser.rows[0] })
         } catch (error) {
             console.error("❌ Error saat register:", error);
             res.status(500).json({ message: "Gagal Menambahkan User", error: error.message });

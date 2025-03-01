@@ -98,9 +98,18 @@ const isAdmin = (req, res, next) => {
 // ✅ Middleware cek role user
 const isUser = (req, res, next) => {
     console.log(`🔍 Checking role for User ID: ${req.idPengguna}`);
+
+    if (!req.idPengguna || !req.role) {
+        console.error("❌ ID pengguna atau role tidak ditemukan dalam request!");
+        return res.status(401).json({ message: "Autentikasi gagal. Silakan login kembali." });
+    }
+
     if (req.role !== "user") {
+        console.error(`❌ Akses ditolak! Role: ${req.role}`);
         return res.status(403).json({ message: "Akses ditolak! Hanya User yang dapat masuk." });
     }
+
+    console.log("✅ Akses diizinkan!");
     next();
 };
 
