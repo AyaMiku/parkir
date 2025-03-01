@@ -77,7 +77,7 @@ const verifyUser = async (req, res, next) => {
             id: user.id,
             role: user.role
         }
-        console.log(`✅ User Authenticated: ID = ${req.idPengguna}, Role = ${req.role}`);
+        console.log(`✅ User Authenticated: ID = ${req.user.id}, Role = ${req.user.role}`);
 
         next();
     } catch (error) {
