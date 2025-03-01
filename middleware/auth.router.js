@@ -97,14 +97,14 @@ const isAdmin = (req, res, next) => {
 
 // ✅ Middleware cek role user
 const isUser = (req, res, next) => {
-    console.log(`🔍 Checking role for User ID: ${req.user.id}`);
+    console.log(`🔍 Checking role for User ID: ${req.user?.id}, Role: ${req.user?.role}`);
 
-    if (!req.user.id || !req.role) {
+    if (!req.user || !req.user.id || !req.user.role) {
         console.error("❌ ID pengguna atau role tidak ditemukan dalam request!");
         return res.status(401).json({ message: "Autentikasi gagal. Silakan login kembali." });
     }
 
-    if (req.role !== "user") {
+    if (req.user.role !== "user") {
         console.error(`❌ Akses ditolak! Role: ${req.user.role}`);
         return res.status(403).json({ message: "Akses ditolak! Hanya User yang dapat masuk." });
     }
@@ -112,6 +112,7 @@ const isUser = (req, res, next) => {
     console.log("✅ Akses diizinkan!");
     next();
 };
+
 
 // 🔥 Export middleware
 module.exports = { verifyUser, isAdmin, isUser };

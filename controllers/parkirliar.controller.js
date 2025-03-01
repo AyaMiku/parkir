@@ -18,7 +18,7 @@ module.exports = {
     getAllLaporan: async (req, res) => {
         try {
             const idPengguna = authenticateToken(req);
-            const laporan = (await pool.query("SELECT * FROM parkir_liar WHERE idPengguna = $1", [idPengguna])).rows;
+            const laporan = (await pool.query("SELECT * FROM parkir_liars WHERE idPengguna = $1", [idPengguna])).rows;
             
             if (laporan.length === 0) {
                 return res.status(404).json({ message: "Tidak ada data laporan ditemukan" });
@@ -34,7 +34,7 @@ module.exports = {
     getParkirById: async (req, res) => {
         try {
             const postId = req.params.id;
-            const post = (await pool.query("SELECT * FROM parkir_liar WHERE id = $1", [postId])).rows[0];
+            const post = (await pool.query("SELECT * FROM parkir_liars WHERE id = $1", [postId])).rows[0];
             
             if (!post) {
                 return res.status(404).json({ message: "Postingan tidak ditemukan." });
@@ -67,7 +67,7 @@ module.exports = {
             });
             
             await pool.query(
-                "INSERT INTO parkir_liar (idPengguna, jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari, bukti, status_post) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'Pending')", 
+                "INSERT INTO parkir_liars (idPengguna, jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari, bukti, status_post) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'Pending')", 
                 [idPengguna, jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari, result.secure_url]
             );
             
@@ -84,7 +84,7 @@ module.exports = {
         let bukti;
 
         try {
-            const laporan = await client.query("SELECT bukti FROM parkir_liar WHERE id = $1", [id]);
+            const laporan = await client.query("SELECT bukti FROM parkir_liars WHERE id = $1", [id]);
             if (laporan.rows.length === 0) {
                 return res.status(404).json({ message: "Laporan tidak ditemukan" });
             }
@@ -108,7 +108,7 @@ module.exports = {
             }
 
             await client.query(
-                "UPDATE parkir_liar SET jenis_kendaraan = $1, tanggaldanwaktu = $2, latitude = $3, longitude = $4, lokasi = $5, status = $6, deskripsi_masalah = $7, hari = $8, bukti = $9 WHERE id = $10",
+                "UPDATE parkir_liars SET jenis_kendaraan = $1, tanggaldanwaktu = $2, latitude = $3, longitude = $4, lokasi = $5, status = $6, deskripsi_masalah = $7, hari = $8, bukti = $9 WHERE id = $10",
                 [jenis_kendaraan, new Date(tanggaldanwaktu), parseFloat(latitude), parseFloat(longitude), lokasi, status, deskripsi_masalah, hari, bukti, id]
             );
 
@@ -122,7 +122,7 @@ module.exports = {
     checkParkirStatus: async (req, res) => {
         try {
             const { id } = req.params;
-            const data = (await pool.query("SELECT * FROM parkir_liar WHERE id = $1", [id])).rows[0];
+            const data = (await pool.query("SELECT * FROM parkir_liars WHERE id = $1", [id])).rows[0];
             
             if (!data) {
                 return res.status(404).json({ message: "Data Parkir Tidak di Temukan" });
@@ -148,14 +148,14 @@ module.exports = {
     deleteLaporan: async (req, res) => {
         try {
             const { id } = req.params;
-            const laporan = await pool.query("SELECT bukti FROM parkir_liar WHERE id = $1", [id]);
+            const laporan = await pool.query("SELECT bukti FROM parkir_liars WHERE id = $1", [id]);
             
             if (laporan.rows.length === 0) {
                 return res.status(404).json({ message: "Data laporan tidak ditemukan" });
             }
 
             const bukti = laporan.rows[0].bukti;
-            await pool.query("DELETE FROM parkir_liar WHERE id = $1", [id]);
+            await pool.query("DELETE FROM parkir_liars WHERE id = $1", [id]);
             
             if (bukti) {
                 const publicId = bukti.split('/').slice(-2).join('/').split('.')[0];
