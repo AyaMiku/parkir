@@ -53,41 +53,41 @@ module.exports = {
     addLaporan: async (req, res) => {
         try {
             const idPengguna = authenticateToken(req);
-            const { jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari } = req.body;
-    
-            if (!req.file) {
-                return res.status(400).json({ message: "Gambar tidak ditemukan." });
+            const { jenis_kendaraan, tanggaldanwaktu, latitude, longitude, status, deskripsi_masalah, hari, bukti } = req.body;
+            const lokasi = String(req.body.lokasi).trim();
+
+            console.log("Lokasi sebelum insert:", lokasi);
+
+            // Validasi: Pastikan gambar dalam format Base64 dikirim
+            if (!bukti || !bukti.startsWith("data:image")) {
+                return res.status(400).json({ message: "Gambar tidak ditemukan atau format tidak valid." });
             }
+
+            console.log("Lokasi yang dikirim:", lokasi); 
     
-            const filePath = req.file.path; // Path file sementara dari Multer
-    
-            // Upload ke Cloudinary
-            const result = await cloudinary.uploader.upload(filePath, { folder: "parkir_liar" });
-    
-            // Hapus file sementara setelah diunggah ke Cloudinary
-            fs.unlinkSync(filePath);
-    
-            // Simpan laporan ke database dan kembalikan data yang baru dibuat
+            // Simpan ke database (langsung dalam format Base64)
             const query = `
-                INSERT INTO parkir_liars (idPengguna, jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari, bukti, status_post) 
+                INSERT INTO parkir_liars ("idPengguna", jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari, bukti, status_post) 
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'Pending')
-                RETURNING *;`;
+                RETURNING *;
+            `;
             
-            const values = [idPengguna, jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari, result.secure_url];
+            const values = [idPengguna, jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari, bukti];
     
             const { rows } = await pool.query(query, values);
             const laporanBaru = rows[0];
     
             res.status(201).json({
                 message: "Berhasil Menambahkan Laporan",
-                laporan: laporanBaru // Mengembalikan laporan yang baru dibuat
+                laporan: laporanBaru
             });
     
         } catch (error) {
             console.error("Terjadi kesalahan saat menambahkan laporan:", error);
             res.status(500).json({ message: "Gagal Menambahkan Laporan", error: error.message });
         }
-    },
+    },    
+    
     
 
     updateLaporan: async (req, res) => {
