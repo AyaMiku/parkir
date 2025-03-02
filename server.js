@@ -29,8 +29,8 @@ cloudinary.config({
 server.use(morgan('tiny'));
 
 server.use(cors());
-server.use(express.json());
-server.use(express.urlencoded({ extended: true }))
+server.use(express.json({ limit: "50mb" }));
+server.use(express.urlencoded({ limit: "50mb", extended: true }))
 
 // Router
 server.use(allRouter);
