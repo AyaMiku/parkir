@@ -158,22 +158,23 @@ module.exports = {
             if (!req.user || !req.user.id) {
                 return res.status(401).json({ message: "Token tidak valid atau telah kedaluwarsa" });
             }
-
+    
             const user = await pool.query(
                 `SELECT nama, email, jenis_kelamin, username, foto_profil, role FROM "Users" WHERE id = $1`,
                 [req.user.id]
             );
-
+    
             if (user.rows.length === 0) {
                 return res.status(404).json({ message: "User tidak ditemukan" });
             }
-
+    
             res.status(200).json(user.rows[0]);
         } catch (error) {
             console.error("❌ Error saat mengambil data user:", error);
             return res.status(500).json({ message: "Terjadi kesalahan saat mengambil data user" });
         }
     },
+    
 
     // ✅ Logout hanya mengirim pesan sukses
     Logout: (req, res) => {

@@ -4,23 +4,17 @@ const jwt = require('jsonwebtoken');
 const streamifier = require('streamifier')
 const fs = require("fs");
 const path = require("path");
+const { authenticateToken } = require('../middleware/auth.router');
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
 
-const authenticateToken = (req) => {
-    const authHeader = req.headers['authorization'];
-    if (!authHeader) throw new Error("Token tidak tersedia");
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    return decoded.userId;
-};
 
 module.exports = {
     getAllLaporan: async (req, res) => {
         try {
-            const idPengguna = authenticateToken(req);
+            const idPengguna =authenticateToken(req);
             const laporan = (await pool.query("SELECT * FROM parkir_liars WHERE idPengguna = $1", [idPengguna])).rows;
             
             if (laporan.length === 0) {
@@ -52,23 +46,32 @@ module.exports = {
 
     addLaporan: async (req, res) => {
         try {
-            const idPengguna = authenticateToken(req);
+            console.log("✅ ID Pengguna dari req.user:", req.user?.id);
+    
+            const idPengguna = req.user.id;
+            if (!idPengguna) {
+                return res.status(401).json({ message: "User tidak terautentikasi" });
+            }
+    
             const { jenis_kendaraan, tanggaldanwaktu, latitude, longitude, status, deskripsi_masalah, hari, bukti } = req.body;
             const lokasi = String(req.body.lokasi).trim();
-
+    
             console.log("Lokasi sebelum insert:", lokasi);
-
-            // Validasi: Pastikan gambar dalam format Base64 dikirim
+    
             if (!bukti || !bukti.startsWith("data:image")) {
                 return res.status(400).json({ message: "Gambar tidak ditemukan atau format tidak valid." });
             }
-
-            console.log("Lokasi yang dikirim:", lokasi); 
     
-            // Simpan ke database (langsung dalam format Base64)
+            console.log("📌 Data sebelum insert:", {
+                idPengguna,
+                jenis_kendaraan,
+                lokasi,
+                deskripsi_masalah
+            });
+    
             const query = `
-                INSERT INTO parkir_liars ("idPengguna", jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari, bukti, status_post) 
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'Pending')
+                INSERT INTO parkir_liars ("idPengguna", jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari, bukti, status_post, "createdAt", "updatedAt") 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'Pending', NOW(), NOW())
                 RETURNING *;
             `;
             
@@ -83,12 +86,10 @@ module.exports = {
             });
     
         } catch (error) {
-            console.error("Terjadi kesalahan saat menambahkan laporan:", error);
+            console.error("❌ Terjadi kesalahan saat menambahkan laporan:", error);
             res.status(500).json({ message: "Gagal Menambahkan Laporan", error: error.message });
         }
-    },    
-    
-    
+    },       
 
     updateLaporan: async (req, res) => {
         const { jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari } = req.body;

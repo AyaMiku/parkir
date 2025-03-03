@@ -25,28 +25,35 @@ const client = new Client({
 })();
 
 // ✅ Middleware autentikasi token
-const authenticateToken = (req) => {
+const authenticateToken = (req, res, next) => {
     try {
         const authHeader = req.headers['authorization'];
         console.log("🔍 Auth Header:", authHeader);
 
-        if (!authHeader) throw new Error("Token tidak tersedia");
+        if (!authHeader) {
+            return res.status(401).json({ message: "Token tidak tersedia" });
+        }
 
-        const token = authHeader.split(' ')[1];
+        const token = authHeader.split(' ')[1]; // ✅ Ekstrak token dengan benar
         console.log("🔑 Extracted Token:", token);
 
-        if (!token) throw new Error("Token tidak valid");
+        if (!token) {
+            return res.status(401).json({ message: "Token tidak valid" });
+        }
 
-        // ✅ Gunakan JWT_SECRET yang benar
+        // ✅ Verifikasi token
         const decoded = jwt.verify(token, JWT_SECRET);
         console.log("✅ Decoded Token:", decoded);
 
-        return decoded;
+        req.user = decoded; // 🔥 Simpan user ke dalam req
+        next(); // Lanjut ke middleware berikutnya
     } catch (error) {
         console.error("❌ JWT Error:", error.message);
-        throw new Error("Token tidak valid atau telah kedaluwarsa");
+        return res.status(401).json({ message: "Token tidak valid atau telah kedaluwarsa" });
     }
 };
+
+
 
 // ✅ Middleware verifikasi pengguna
 const verifyUser = async (req, res, next) => {
@@ -54,7 +61,18 @@ const verifyUser = async (req, res, next) => {
         console.log("=== [Middleware] Verifying User ===");
         console.log("📢 Header Authorization:", req.headers.authorization);
 
-        const decoded = authenticateToken(req);
+        const authHeader = req.headers['authorization'];
+        if (!authHeader) {
+            return res.status(401).json({ message: "Token tidak tersedia" });
+        }
+
+        const token = authHeader.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ message: "Token tidak valid" });
+        }
+
+        // ✅ Verifikasi token & dapatkan decoded user data
+        const decoded = jwt.verify(token, JWT_SECRET);
         console.log("✅ Decoded Token:", decoded);
 
         // 🔹 Pastikan ID valid
@@ -68,23 +86,23 @@ const verifyUser = async (req, res, next) => {
 
         if (result.rows.length === 0) {
             console.error(`❌ User dengan ID ${decoded.id} tidak ditemukan.`);
-            return res.status(404).json({ message: "User Tidak ditemukan" });
+            return res.status(404).json({ message: "User tidak ditemukan" });
         }
 
-        // ✅ User valid, simpan ke `req`
-        const user = result.rows[0];
+        // ✅ User valid, simpan ke `req.user`
         req.user = {
-            id: user.id,
-            role: user.role
+            id: result.rows[0].id,
+            role: result.rows[0].role
         }
         console.log(`✅ User Authenticated: ID = ${req.user.id}, Role = ${req.user.role}`);
 
-        next();
+        next(); // Lanjut ke middleware/controller berikutnya
     } catch (error) {
         console.error("❌ JWT Verification Error:", error.message);
         return res.status(401).json({ message: "Token tidak valid atau telah kedaluwarsa" });
     }
 };
+
 
 // ✅ Middleware cek role admin
 const isAdmin = (req, res, next) => {
@@ -115,4 +133,4 @@ const isUser = (req, res, next) => {
 
 
 // 🔥 Export middleware
-module.exports = { verifyUser, isAdmin, isUser };
+module.exports = { verifyUser, isAdmin, isUser, authenticateToken };

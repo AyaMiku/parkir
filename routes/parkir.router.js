@@ -9,12 +9,12 @@ const {
     checkParkirStatus
 } = require ("../controllers/parkirliar.controller")
 
-const {verifyUser, isUser} = require('../middleware/auth.router')
+const {verifyUser, isUser, authenticateToken} = require('../middleware/auth.router')
 const upload = require('../middleware/upload')
 
 router.get("/parkir/:idPengguna", verifyUser, isUser, getAllLaporan)
 router.get("/parkir/detail/:id", verifyUser, isUser,  getParkirById)
-router.post("/parkir",  verifyUser, isUser,  upload.single('bukti'), addLaporan);
+router.post("/parkir",  verifyUser, isUser, authenticateToken,  upload.single('bukti'), addLaporan);
 router.patch("/parkir/:id", verifyUser, isUser, upload.single('bukti'), updateLaporan )
 router.get("/parkir/status/:id", verifyUser, isUser,  checkParkirStatus)
 
