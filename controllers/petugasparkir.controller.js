@@ -14,7 +14,9 @@ client.connect()
 module.exports = {
     getAllPetugas: async (req, res) => {
         try {
-            const result = await client.query("SELECT lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti FROM petugas_parkir");
+            const result = await client.query(
+                "SELECT lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti FROM petugas_parkir"
+            );
             res.json({ message: "Sukses Mengambil Data Petugas", data: result.rows });
         } catch (error) {
             console.error("Error fetching data:", error);
@@ -24,13 +26,20 @@ module.exports = {
 
     getPetugasById: async (req, res) => {
         try {
+            const id = parseInt(req.params.id, 10);
+            if (isNaN(id)) {
+                return res.status(400).json({ message: "ID tidak valid" })
+            }
+
             const result = await client.query(
-                "SELECT * FROM petugas_parkir WHERE id = $1",
-                [req.params.id]
+                "SELECT lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti, idPengguna FROM petugas_parkirs WHERE id = $1",
+                [id]
             );
+
             if (result.rows.length === 0) {
                 return res.status(404).json({ message: "Data tidak ditemukan" });
             }
+            
             res.json({ message: "Sukses Mengambil Data Petugas", data: result.rows[0] });
         } catch (error) {
             console.error("Error fetching data:", error);
@@ -63,7 +72,7 @@ module.exports = {
             });
 
             await client.query(
-                "INSERT INTO petugas_parkir (lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti, idPengguna) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+                "INSERT INTO petugas_parkirs (lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti, idPengguna) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
                 [lokasi, new Date(tanggaldanwaktu), parseFloat(latitude), parseFloat(longitude), identitas_petugas, hari, status, result.secure_url, userId]
             );
 
@@ -81,7 +90,7 @@ module.exports = {
             const userId = authenticateToken(req);
     
             // Cek apakah petugas ada dan milik pengguna yang sesuai
-            const petugas = await client.query("SELECT * FROM petugas_parkir WHERE id = $1 AND idPengguna = $2", [id, userId]);
+            const petugas = await client.query("SELECT * FROM petugas_parkirs WHERE id = $1 AND idPengguna = $2", [id, userId]);
     
             if (petugas.rows.length === 0) {
                 return res.status(404).json({ message: "Petugas tidak ditemukan atau bukan milik Anda" });
@@ -133,7 +142,7 @@ module.exports = {
             }
             const bukti = petugas.rows[0].bukti;
 
-            await client.query("DELETE FROM petugas_parkir WHERE id = $1", [id]);
+            await client.query("DELETE FROM petugas_parkirs WHERE id = $1", [id]);
             if (bukti) {
                 const publicId = bukti.split('/').slice(-2).join('/').split('.')[0];
                 await cloudinary.uploader.destroy(publicId);
