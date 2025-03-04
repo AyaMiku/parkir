@@ -12,7 +12,7 @@ const {
 const {verifyUser, isUser, authenticateToken} = require('../middleware/auth.router')
 const upload = require('../middleware/upload')
 
-router.get("/parkir/:idPengguna", verifyUser, isUser, getAllLaporan)
+router.get("/parkir/:idPengguna", verifyUser, isUser, authenticateToken, getAllLaporan)
 router.get("/parkir/detail/:id", verifyUser, isUser,  getParkirById)
 router.post("/parkir",  verifyUser, isUser, authenticateToken,  upload.single('bukti'), addLaporan);
 router.patch("/parkir/:id", verifyUser, isUser, upload.single('bukti'), updateLaporan )

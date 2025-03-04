@@ -14,8 +14,18 @@ const pool = new Pool({
 module.exports = {
     getAllLaporan: async (req, res) => {
         try {
-            const idPengguna =authenticateToken(req);
-            const laporan = (await pool.query("SELECT * FROM parkir_liars WHERE idPengguna = $1", [idPengguna])).rows;
+            console.log("ID Pengguna dari req.user:", req.user?.id);
+
+            const idPengguna = req.user?.id;
+            if (!idPengguna) {
+                return res.status(401).json({
+                    message: "User tidak terautentikasi"
+                })
+            }
+
+            const laporan = (await pool.query(
+                'SELECT * FROM parkir_liars WHERE "idPengguna" = $1', [idPengguna]
+            )).rows;
             
             if (laporan.length === 0) {
                 return res.status(404).json({ message: "Tidak ada data laporan ditemukan" });
@@ -31,7 +41,10 @@ module.exports = {
     getParkirById: async (req, res) => {
         try {
             const postId = req.params.id;
-            const post = (await pool.query("SELECT * FROM parkir_liars WHERE id = $1", [postId])).rows[0];
+
+            const post = (await pool.query(
+                "SELECT * FROM parkir_liars WHERE id = $1", [postId]
+            )).rows[0];
             
             if (!post) {
                 return res.status(404).json({ message: "Postingan tidak ditemukan." });
@@ -55,6 +68,7 @@ module.exports = {
     
             const { jenis_kendaraan, tanggaldanwaktu, latitude, longitude, status, deskripsi_masalah, hari, bukti } = req.body;
             const lokasi = String(req.body.lokasi).trim();
+            const status_post = "Pending";
     
             console.log("Lokasi sebelum insert:", lokasi);
     
