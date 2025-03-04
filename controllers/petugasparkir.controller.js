@@ -1,21 +1,15 @@
 const { Client } = require('pg');
 const cloudinary = require('cloudinary').v2;
 const jwt = require('jsonwebtoken');
+const { authenticateToken } = require('../middleware/auth.router');
 
 const client = new Client({
     connectionString: process.env.DATABASE_URL,
 });
+
 client.connect()
     .then(() => console.log("Database connected"))
     .catch(err => console.error("Database connection error:", err.stack));
-
-const authenticateToken = (req) => {
-    const authHeader = req.headers['authorization'];
-    if (!authHeader) throw new Error("Token tidak tersedia");
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    return decoded.userId;
-};
 
 module.exports = {
     getAllPetugas: async (req, res) => {
@@ -46,21 +40,26 @@ module.exports = {
 
     addPetugas: async (req, res) => {
         try {
-            const userId = authenticateToken(req);
+            const userId = req.user?.id;
+            if (!userId) {
+                return res.status(401).json({ message: "User tidak terautentikasi" })
+            }
+
             const { lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status } = req.body;
             
-            if (!req.file) {
+            if (!bukti || !bukti.startsWith("data:image")) {
                 return res.status(400).json({ message: "Gambar tidak ditemukan." });
             }
 
-            const result = await new Promise((resolve, reject) => {
-                cloudinary.uploader.upload_stream(
-                    { folder: 'petugas_parkir', resource_type: 'auto' },
-                    (error, result) => {
-                        if (error) return reject(error);
-                        resolve(result);
-                    }
-                ).end(req.file.buffer);
+            console.log("📌 Data sebelum insert:", {
+                userId,
+                lokasi,
+                tanggaldanwaktu,
+                latitude,
+                longitude,
+                identitas_petugas,
+                hari,
+                status
             });
 
             await client.query(
