@@ -91,7 +91,7 @@ module.exports = {
                 });
             }
 
-            console.log("📌 Prediksi ML:", status_prediksi);
+            console.log("📌 Prediksi ML:", status);
 
             if (!bukti || !bukti.startsWith("data:image")) {
                 return res.status(400).json({ message: "Gambar tidak ditemukan atau format tidak valid." });
@@ -159,14 +159,14 @@ module.exports = {
             console.log("📢 Response dari ML:", mlResponse.data);
 
             // **Ambil prediksi dari ML**
-            const status_prediksi = mlResponse.data["Status Pelaporan"]?.[0];
-            if (!status_prediksi || !["Liar", "Tidak Liar"].includes(status_prediksi)) {
+            const status = mlResponse.data["Status Pelaporan"]?.[0];
+            if (!status || !["Liar", "Tidak Liar"].includes(status)) {
                 return res.status(400).json({
                     message: "Status dari API ML tidak valid atau tidak diterima"
                 });
             }
 
-            console.log("📌 Status ML setelah update:", status_prediksi);
+            console.log("📌 Status ML setelah update:", status);
 
             if (!bukti || !bukti.startsWith("data:image")) {
                 return res.status(400).json({ message: "Gambar tidak ditemukan atau format tidak valid." });
