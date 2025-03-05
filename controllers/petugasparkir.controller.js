@@ -51,19 +51,19 @@ module.exports = {
     addPetugas: async (req, res) => {
         try {
             console.log("✅ ID Pengguna dari req.user:", req.user?.id);
-    
+
             const idPengguna = req.user.id;
             if (!idPengguna) {
                 return res.status(401).json({ message: "User tidak terautentikasi" });
             }
-    
+
             const { lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, bukti } = req.body;
-            
+
             const status_post = "Pending";
 
-            
+
             console.log("📌 Data sebelum validasi ML:", { identitas_petugas, tanggaldanwaktu });
-            
+
             const mlResponse = await axios.post(
                 "https://lapor-parkir-ml.onrender.com/Petugas_parkir",
                 {
@@ -71,22 +71,22 @@ module.exports = {
                     Lokasi: lokasi
                 }
             );
-            
+
             console.log("📢 Response dari ML:", mlResponse.data);
-            
+
             const status = mlResponse.data["Status Pelaporan"]?.[0];
             if (!status || !["Liar", "Tidak Liar"].includes(status)) {
                 return res.status(400).json({
                     message: "Status dari API ML tidak valid atau tidak diterima"
                 });
             }
-            
+
             console.log("📌 Prediksi ML:", status);
 
             if (!bukti || !bukti.startsWith("data:image")) {
                 return res.status(400).json({ message: "Gambar tidak ditemukan atau format tidak valid." });
             }
-    
+
             console.log("📌 Data sebelum insert:", {
                 idPengguna,
                 lokasi,
@@ -96,29 +96,31 @@ module.exports = {
                 identitas_petugas,
                 status
             });
-    
+
             const query = `
-                INSERT INTO petugas_parkirs ("idPengguna", lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti, status_post, "createdAt", "updatedAt") 
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+                INSERT INTO petugas_parkirs 
+                ("idPengguna", lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti, status_post, "createdAt", "updatedAt") 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
                 RETURNING *;
             `;
-    
-            const values = [idPengguna, lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti];
-    
+
+            const values = [idPengguna, lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti, status_post];  // ✅ Tambahkan status_post
+
+
             const { rows } = await pool.query(query, values);
             const petugasBaru = rows[0];
-    
+
             res.status(201).json({
                 message: "Berhasil Menambahkan Petugas",
                 petugas: petugasBaru
             });
-    
+
         } catch (error) {
             console.error("❌ Terjadi kesalahan saat menambahkan petugas:", error);
             res.status(500).json({ message: "Gagal Menambahkan Petugas", error: error.message });
         }
     },
-    
+
 
     updatePetugas: async (req, res) => {
         try {
