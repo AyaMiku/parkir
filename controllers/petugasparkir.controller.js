@@ -15,9 +15,22 @@ pool.connect()
 module.exports = {
     getAllPetugas: async (req, res) => {
         try {
+            console.log("ID Pengguna dari req.user:", req.user?.id);
+
+            const idPengguna = req.user?.id;
+            if (!idPengguna) {
+                return res.status(401).json({ message: "User tidak terautentikasi" })
+            }
+
             const result = await pool.query(
-                "SELECT lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti FROM petugas_parkirs"
+               'SELECT lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti, status_post FROM petugas_parkirs WHERE "idPengguna" = $1',
+               [idPengguna]
             );
+
+            if (result.rows.length === 0) {
+                return res.status(404).json({ message: "Tidak ada data petugas ditemukan" })
+            }
+
             res.json({ message: "Sukses Mengambil Data Petugas", data: result.rows });
         } catch (error) {
             console.error("Error fetching data:", error);
