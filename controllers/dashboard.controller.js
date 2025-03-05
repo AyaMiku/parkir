@@ -10,16 +10,16 @@ const pool = new Pool({
 module.exports = {
     getDashboard: async (req, res) => {
         try {
-            const userCount = (await pool.query("SELECT COUNT(*) FROM users")).rows[0].count;
-            const approvePetugasCount = (await pool.query("SELECT COUNT(*) FROM petugas_parkir WHERE status_post = 'Approve'" )).rows[0].count;
-            const approveParkirCount = (await pool.query("SELECT COUNT(*) FROM parkir_liar WHERE status_post = 'Approve'" )).rows[0].count;
+            const userCount = (await pool.query('SELECT COUNT(*) FROM "Users"')).rows[0].count;
+            const approvePetugasCount = (await pool.query("SELECT COUNT(*) FROM petugas_parkirs WHERE status_post = 'Approve'" )).rows[0].count;
+            const approveParkirCount = (await pool.query("SELECT COUNT(*) FROM parkir_liars WHERE status_post = 'Approve'" )).rows[0].count;
             
             const totalApprove = parseInt(approvePetugasCount) + parseInt(approveParkirCount);
-            const laporanPetugasCount = (await pool.query("SELECT COUNT(*) FROM petugas_parkir" )).rows[0].count;
-            const laporanParkirCount = (await pool.query("SELECT COUNT(*) FROM parkir_liar" )).rows[0].count;
+            const laporanPetugasCount = (await pool.query("SELECT COUNT(*) FROM petugas_parkirs" )).rows[0].count;
+            const laporanParkirCount = (await pool.query("SELECT COUNT(*) FROM parkir_liars" )).rows[0].count;
 
-            const dataPetugas = (await pool.query("SELECT latitude, longitude FROM petugas_parkir WHERE status_post = 'Approve'" )).rows;
-            const dataParkir = (await pool.query("SELECT latitude, longitude FROM parkir_liar WHERE status_post = 'Approve'" )).rows;
+            const dataPetugas = (await pool.query("SELECT latitude, longitude FROM petugas_parkirs WHERE status_post = 'Approve'" )).rows;
+            const dataParkir = (await pool.query("SELECT latitude, longitude FROM parkir_liars WHERE status_post = 'Approve'" )).rows;
 
             res.json({
                 userCount,
