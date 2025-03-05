@@ -67,7 +67,7 @@ module.exports = {
                 return res.status(401).json({ message: "User tidak terautentikasi" });
             }
 
-            const { jenis_kendaraan, tanggaldanwaktu, latitude, longitude, status, deskripsi_masalah, hari, bukti } = req.body;
+            const { jenis_kendaraan, tanggaldanwaktu, latitude, longitude, deskripsi_masalah, hari, bukti } = req.body;
             const lokasi = String(req.body.lokasi).trim();
             const status_post = "Pending";
 
@@ -84,8 +84,8 @@ module.exports = {
 
             console.log("📢 Response dari ML:", mlResponse.data);
 
-            const status_prediksi = mlResponse.data["Status Pelaporan"]?.[0];
-            if (!status_prediksi || !["Liar", "Tidak Liar"].includes(status_prediksi)) {
+            const status = mlResponse.data["Status Pelaporan"]?.[0];
+            if (!status || !["Liar", "Tidak Liar"].includes(status)) {
                 return res.status(400).json({
                     message: "Status dari API ML tidak valid atau tidak diterima"
                 });
