@@ -2,6 +2,7 @@ const { Pool } = require('pg');
 const cloudinary = require('cloudinary').v2;
 const jwt = require('jsonwebtoken');
 const { authenticateToken } = require('../middleware/auth.router');
+const axios = require("axios");
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -56,13 +57,34 @@ module.exports = {
                 return res.status(401).json({ message: "User tidak terautentikasi" });
             }
     
-            const { lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti } = req.body;
+            const { lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, bukti } = req.body;
             
             const status_post = "Pending";
 
             if (!bukti || !bukti.startsWith("data:image")) {
                 return res.status(400).json({ message: "Gambar tidak ditemukan atau format tidak valid." });
             }
+
+            console.log("📌 Data sebelum validasi ML:", { identitas_petugas, tanggaldanwaktu });
+
+            const mlResponse = await axios.post(
+                "https://lapor-parkir-ml.onrender.com/Petugas_parkir",
+                {
+                    Identitas_Petugas: identitas_petugas,
+                    Waktu: tanggaldanwaktu
+                }
+            );
+    
+            console.log("📢 Response dari ML:", mlResponse.data);
+
+            const status = mlResponse.data["Status Pelaporan"]?.[0];
+            if (!status || !["Liar", "Tidak Liar"].includes(status)) {
+                return res.status(400).json({
+                    message: "Status dari API ML tidak valid atau tidak diterima"
+                });
+            }
+
+            console.log("📌 Prediksi ML:", status);
     
             console.log("📌 Data sebelum insert:", {
                 idPengguna,
@@ -70,7 +92,8 @@ module.exports = {
                 latitude,
                 longitude,
                 hari,
-                identitas_petugas
+                identitas_petugas,
+                status
             });
     
             const query = `
