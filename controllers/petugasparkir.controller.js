@@ -61,30 +61,31 @@ module.exports = {
             
             const status_post = "Pending";
 
-            if (!bukti || !bukti.startsWith("data:image")) {
-                return res.status(400).json({ message: "Gambar tidak ditemukan atau format tidak valid." });
-            }
-
+            
             console.log("📌 Data sebelum validasi ML:", { identitas_petugas, tanggaldanwaktu });
-
+            
             const mlResponse = await axios.post(
                 "https://lapor-parkir-ml.onrender.com/Petugas_parkir",
                 {
                     Identitas_Petugas: identitas_petugas,
-                    Waktu: tanggaldanwaktu
+                    Lokas: lokasi
                 }
             );
-    
+            
             console.log("📢 Response dari ML:", mlResponse.data);
-
+            
             const status = mlResponse.data["Status Pelaporan"]?.[0];
             if (!status || !["Liar", "Tidak Liar"].includes(status)) {
                 return res.status(400).json({
                     message: "Status dari API ML tidak valid atau tidak diterima"
                 });
             }
-
+            
             console.log("📌 Prediksi ML:", status);
+
+            if (!bukti || !bukti.startsWith("data:image")) {
+                return res.status(400).json({ message: "Gambar tidak ditemukan atau format tidak valid." });
+            }
     
             console.log("📌 Data sebelum insert:", {
                 idPengguna,
