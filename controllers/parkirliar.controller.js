@@ -5,6 +5,7 @@ const streamifier = require('streamifier')
 const fs = require("fs");
 const path = require("path");
 const { authenticateToken } = require('../middleware/auth.router');
+const axios = require('axios');
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
