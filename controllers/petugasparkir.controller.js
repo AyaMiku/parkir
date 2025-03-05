@@ -14,8 +14,8 @@ pool.connect()
 module.exports = {
     getAllPetugas: async (req, res) => {
         try {
-            const result = await client.query(
-                "SELECT lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti FROM petugas_parkir"
+            const result = await pool.query(
+                "SELECT lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti FROM petugas_parkirs"
             );
             res.json({ message: "Sukses Mengambil Data Petugas", data: result.rows });
         } catch (error) {
@@ -31,7 +31,7 @@ module.exports = {
                 return res.status(400).json({ message: "ID tidak valid" })
             }
 
-            const result = await client.query(
+            const result = await pool.query(
                 "SELECT lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti, idPengguna FROM petugas_parkirs WHERE id = $1",
                 [id]
             );
@@ -57,7 +57,9 @@ module.exports = {
             }
     
             const { lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti } = req.body;
-    
+            
+            const status_post = "Pending";
+
             if (!bukti || !bukti.startsWith("data:image")) {
                 return res.status(400).json({ message: "Gambar tidak ditemukan atau format tidak valid." });
             }
@@ -72,7 +74,7 @@ module.exports = {
             });
     
             const query = `
-                INSERT INTO petugas_parkirs ("idPengguna", lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti, "createdAt", "updatedAt") 
+                INSERT INTO petugas_parkirs ("idPengguna", lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti, status_post "createdAt", "updatedAt") 
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
                 RETURNING *;
             `;

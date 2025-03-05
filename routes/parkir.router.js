@@ -18,5 +18,4 @@ router.post("/parkir",  verifyUser, isUser, authenticateToken,  upload.single('b
 router.patch("/parkir/:id", verifyUser, isUser, upload.single('bukti'), updateLaporan )
 router.get("/parkir/status/:id", verifyUser, isUser,  checkParkirStatus)
 
-
 module.exports = router
