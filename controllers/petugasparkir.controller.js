@@ -98,7 +98,7 @@ module.exports = {
             });
     
             const query = `
-                INSERT INTO petugas_parkirs ("idPengguna", lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti, status_post "createdAt", "updatedAt") 
+                INSERT INTO petugas_parkirs ("idPengguna", lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti, status_post, "createdAt", "updatedAt") 
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
                 RETURNING *;
             `;
