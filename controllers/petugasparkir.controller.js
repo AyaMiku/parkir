@@ -68,7 +68,7 @@ module.exports = {
                 "https://lapor-parkir-ml.onrender.com/Petugas_parkir",
                 {
                     Identitas_Petugas: identitas_petugas,
-                    Lokas: lokasi
+                    Lokasi: lokasi
                 }
             );
             
