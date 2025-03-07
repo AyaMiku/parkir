@@ -35,7 +35,6 @@ router.post(
   addLaporan,
 );
 router.get("/parkir/all", verifyUser, isUser, getAllParkir);
-router.get("/parkir/alldata", verifyUser, isUser, getAllData);
 router.patch(
   "/parkir/:id",
   verifyUser,
