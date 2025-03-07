@@ -34,8 +34,8 @@ router.post(
   upload.single("bukti"),
   addLaporan,
 );
-router.get("/parkir/all", getAllParkir);
-router.get("/parkir/alldata", getAllData);
+router.get("/parkir/all", verifyUser, isUser, getAllParkir);
+router.get("/parkir/alldata", verifyUser, isUser, getAllData);
 router.patch(
   "/parkir/:id",
   verifyUser,
