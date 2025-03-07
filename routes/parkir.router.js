@@ -8,6 +8,7 @@ const {
   updateLaporan,
   checkParkirStatus,
   getAllParkir,
+  getAllData,
 } = require("../controllers/parkirliar.controller");
 
 const {
@@ -34,6 +35,7 @@ router.post(
   addLaporan,
 );
 router.get("/parkir/all", getAllParkir);
+router.get("/parkir/alldata", getAllData);
 router.patch(
   "/parkir/:id",
   verifyUser,

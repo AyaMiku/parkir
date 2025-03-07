@@ -65,6 +65,32 @@ module.exports = {
     }
   },
 
+  getAllData: async (req, res) => {
+    try {
+      // Ambil semua data dari tabel parkir_liars
+      const laporan = (await pool.query("SELECT * FROM parkir_liars")).rows;
+
+      // Ambil semua data dari tabel petugas_parkirs
+      const petugas = (await pool.query("SELECT * FROM petugas_parkirs")).rows;
+
+      // Periksa apakah kedua data kosong
+      if (laporan.length === 0 && petugas.length === 0) {
+        return res.status(404).json({ message: "Tidak ada data ditemukan" });
+      }
+
+      res.json({
+        message: "Sukses Mengambil Semua Data",
+        laporan: laporan,
+        petugas: petugas,
+      });
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      res
+        .status(500)
+        .json({ message: "Gagal mengambil data", error: error.message });
+    }
+  },
+
   getParkirById: async (req, res) => {
     try {
       const postId = req.params.id;
