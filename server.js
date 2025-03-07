@@ -41,7 +41,7 @@ server.get("/", (req, res) => {
   res.send("<h1>Home</h1>");
 });
 
-const PORT = 3500;
+const PORT = 3000;
 
 // Jalankan server
 server.listen(PORT, () => {
