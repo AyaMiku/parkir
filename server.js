@@ -1,46 +1,47 @@
-const express = require('express');
+const express = require("express");
 const server = express();
-const allRouter = require('./routes');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const cloudinary = require('cloudinary').v2;
-const morgan = require('morgan');
+const allRouter = require("./routes");
+const cors = require("cors");
+const dotenv = require("dotenv");
+const cloudinary = require("cloudinary").v2;
+const morgan = require("morgan");
 
 dotenv.config();
 
-const { Client } = require('pg');
+const { Client } = require("pg");
 
 const client = new Client({
   connectionString: process.env.DATABASE_URL,
 });
 
-client.connect()
+client
+  .connect()
   .then(() => console.log("Database connected"))
-  .catch(err => console.error("Database connection error:", err.stack));
+  .catch((err) => console.error("Database connection error:", err.stack));
 
 // Konfigurasi Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
   api_key: process.env.API_KEY,
-  api_secret: process.env.API_SECRET
+  api_secret: process.env.API_SECRET,
 });
 
 // Middleware
-server.use(morgan('tiny'));
+server.use(morgan("tiny"));
 
 server.use(cors());
 server.use(express.json({ limit: "50mb" }));
-server.use(express.urlencoded({ limit: "50mb", extended: true }))
+server.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Router
 server.use(allRouter);
 
 // Route untuk home
-server.get('/', (req, res) => {
+server.get("/", (req, res) => {
   res.send("<h1>Home</h1>");
 });
 
-const PORT = 3000;
+const PORT = 3500;
 
 // Jalankan server
 server.listen(PORT, () => {

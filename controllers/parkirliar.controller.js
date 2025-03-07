@@ -4,7 +4,6 @@ const jwt = require("jsonwebtoken");
 const streamifier = require("streamifier");
 const fs = require("fs");
 const path = require("path");
-const { authenticateToken } = require("../middleware/auth.router");
 const axios = require("axios");
 
 const pool = new Pool({
@@ -44,6 +43,28 @@ module.exports = {
     }
   },
 
+  getAllParkir: async (req, res) => {
+    try {
+      const laporan = (await pool.query("SELECT * FROM parkir_liars")).rows;
+
+      if (laporan.length === 0) {
+        return res
+          .status(404)
+          .json({ message: "Tidak ada data laporan ditemukan" });
+      }
+
+      res.json({
+        message: "Sukses Mengambil Semua Data Parkir",
+        data: laporan,
+      });
+    } catch (error) {
+      console.error(error);
+      res
+        .status(500)
+        .json({ message: "Gagal mengambil data Parkir", error: error.message });
+    }
+  },
+
   getParkirById: async (req, res) => {
     try {
       const postId = req.params.id;
@@ -59,12 +80,10 @@ module.exports = {
       res.json({ message: "Sukses Mengambil Data Postingan", data: post });
     } catch (error) {
       console.error(error);
-      res
-        .status(500)
-        .json({
-          message: "Gagal mengambil data postingan",
-          error: error.message,
-        });
+      res.status(500).json({
+        message: "Gagal mengambil data postingan",
+        error: error.message,
+      });
     }
   },
 
@@ -282,12 +301,10 @@ module.exports = {
             : `Status: ${data.status_post}`,
       });
     } catch (error) {
-      res
-        .status(500)
-        .json({
-          message: "Gagal mengambil status parkir",
-          error: error.message,
-        });
+      res.status(500).json({
+        message: "Gagal mengambil status parkir",
+        error: error.message,
+      });
     }
   },
 
