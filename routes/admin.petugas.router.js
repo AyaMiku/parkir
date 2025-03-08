@@ -25,7 +25,13 @@ router.get(
 router.get("/admin-petugas/:id", getPetugasById);
 router.post("/admin-petugas", upload.single("bukti"), addPetugas);
 router.patch("/admin-petugas/:id", upload.single("bukti"), updatePetugas);
-router.delete("/admin-petugas/:id", upload.single("bukti"), deletePetugas);
+router.delete(
+  "/adminpetugas/:id",
+  authenticateToken,
+  verifyUser,
+  isAdmin,
+  deletePetugas,
+);
 
 // admin approval
 const { approvePetugasParkir } = require("../middleware/adminApproval");

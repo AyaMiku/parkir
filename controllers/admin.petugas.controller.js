@@ -1,9 +1,9 @@
-const { Client } = require("pg");
+const { Pool } = require("pg");
 const cloudinary = require("cloudinary").v2;
 const jwt = require("jsonwebtoken");
 const upload = require("../middleware/upload");
 
-const client = new Client({
+const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
@@ -13,7 +13,7 @@ module.exports = {
       console.log(`📢 Akses diterima oleh Admin ID: ${req.user?.id}`);
 
       // ✅ Query semua data petugas
-      const result = await client.query(
+      const result = await pool.query(
         "SELECT lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti FROM petugas_parkirs",
       );
 
