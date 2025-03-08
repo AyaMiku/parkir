@@ -1,10 +1,12 @@
-const express = require('express')
-const router = express.Router()
+const express = require("express");
+const router = express.Router();
 
 const {
-    getDashboard
-} = require('../controllers/dashboard.controller')
+  getDashboard,
+  getOverview,
+} = require("../controllers/dashboard.controller");
 
-router.use('/dashboard', getDashboard)
+router.use("/dashboard", getDashboard);
+router.use("/overview", getOverview);
 
-module.exports = router
+module.exports = router;
