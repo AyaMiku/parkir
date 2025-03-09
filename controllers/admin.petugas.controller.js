@@ -14,7 +14,7 @@ module.exports = {
 
       // ✅ Query semua data petugas
       const result = await pool.query(
-        "SELECT lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti FROM petugas_parkirs",
+        "SELECT id, lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti FROM petugas_parkirs",
       );
 
       res.json({ message: "Sukses Mengambil Data Petugas", data: result.rows });
@@ -180,8 +180,8 @@ module.exports = {
   deletePetugas: async (req, res) => {
     const { id } = req.params;
     try {
-      const petugas = await client.query(
-        "SELECT bukti FROM petugas_parkir WHERE id = $1",
+      const petugas = await pool.query(
+        "SELECT bukti FROM petugas_parkirs WHERE id = $1",
         [id],
       );
       if (petugas.rows.length === 0) {
@@ -191,11 +191,8 @@ module.exports = {
       }
       const bukti = petugas.rows[0].bukti;
 
-      await client.query("DELETE FROM petugas_parkir WHERE id = $1", [id]);
-      if (bukti) {
-        const publicId = bukti.split("/").slice(-2).join("/").split(".")[0];
-        await cloudinary.uploader.destroy(publicId);
-      }
+      await pool.query("DELETE FROM petugas_parkirs WHERE id = $1", [id]);
+
       res.status(200).json({ message: "Data Petugas berhasil dihapus" });
     } catch (error) {
       console.error("Error deleting petugas:", error);

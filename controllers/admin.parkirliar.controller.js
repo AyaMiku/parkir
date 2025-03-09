@@ -12,7 +12,7 @@ module.exports = {
       console.log(`Akses diterima oleh Admin ID: ${req.user?.id}`);
 
       const result = await pool.query(
-        "SELECT jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, deskripsi_masalah, hari, bukti FROM parkir_liars",
+        "SELECT id, jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, deskripsi_masalah, hari, bukti FROM parkir_liars",
       );
 
       res.json({ message: "Sukses Mengambil Data Laporan", data: result.rows });
@@ -71,7 +71,7 @@ module.exports = {
           .end(req.file.buffer);
       });
 
-      await client.query(
+      await pool.query(
         "INSERT INTO parkir_liar (jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari, bukti, idUser) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
         [
           jenis_kendaraan,
@@ -168,8 +168,8 @@ module.exports = {
   deleteParkir: async (req, res) => {
     const { id } = req.params;
     try {
-      const laporan = await client.query(
-        "SELECT bukti FROM parkir_liar WHERE id = $1",
+      const laporan = await pool.query(
+        "SELECT bukti FROM parkir_liars WHERE id = $1",
         [id],
       );
       if (laporan.rows.length === 0) {
@@ -177,11 +177,8 @@ module.exports = {
       }
       const bukti = laporan.rows[0].bukti;
 
-      await client.query("DELETE FROM parkir_liar WHERE id = $1", [id]);
-      if (bukti) {
-        const publicId = bukti.split("/").slice(-2).join("/").split(".")[0];
-        await cloudinary.uploader.destroy(publicId);
-      }
+      await pool.query("DELETE FROM parkir_liars WHERE id = $1", [id]);
+
       res.status(200).json({ message: "Data Parkir berhasil dihapus" });
     } catch (error) {
       console.error("Error deleting parkir:", error);

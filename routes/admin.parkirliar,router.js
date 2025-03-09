@@ -26,7 +26,7 @@ router.get(
 router.get("/admin-parkir/:id", getLaporanById);
 router.post("/admin-parkir", upload.single("bukti"), addLaporan);
 router.patch("/admin-parkir/:id", upload.single("bukti"), updateLaporan);
-router.delete("/admin-parkir/:id", upload.single("bukti"), deleteParkir);
+router.delete("/adminparkir/:id", upload.single("bukti"), deleteParkir);
 
 // admin approval
 const { approveParkirLiar } = require("../middleware/adminApproval");
