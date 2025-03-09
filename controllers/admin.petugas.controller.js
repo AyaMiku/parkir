@@ -26,10 +26,13 @@ module.exports = {
 
   getPetugasById: async (req, res) => {
     try {
-      const result = await client.query(
-        "SELECT p.lokasi, p.tanggaldanwaktu, p.latitude, p.longitude, p.identitas_petugas, p.hari, p.status, p.bukti, u.nama, u.username, u.email FROM petugas_parkir p LEFT JOIN users u ON p.idPengguna = u.id WHERE p.id = $1",
-        [req.params.id],
+      const postId = req.params.id;
+
+      const result = await pool.query(
+        "SELECT * FROM petugas_parkirs WHERE id = $1",
+        [postId],
       );
+
       if (result.rows.length === 0) {
         return res.status(404).json({ message: "Data tidak ditemukan" });
       }

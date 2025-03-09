@@ -24,9 +24,11 @@ module.exports = {
 
   getLaporanById: async (req, res) => {
     try {
-      const result = await client.query(
-        "SELECT p.jenis_kendaraan, p.tanggaldanwaktu, p.latitude, p.longitude, p.lokasi, p.deskripsi_masalah, p.hari, p.bukti, u.nama, u.username, u.email FROM parkir_liar p LEFT JOIN users u ON p.idUser = u.id WHERE p.id = $1",
-        [req.params.id],
+      const postId = req.params.id;
+
+      const result = await pool.query(
+        "SELECT * FROM parkir_liars WHERE id = $1",
+        [postId],
       );
       if (result.rows.length === 0) {
         return res.status(404).json({ message: "Data tidak ditemukan" });
