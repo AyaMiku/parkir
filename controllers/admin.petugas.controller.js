@@ -112,12 +112,14 @@ module.exports = {
         longitude,
         identitas_petugas,
         hari,
-        status,
+        status_post, // Ganti dari status ke status_post
+        bukti,
       } = req.body;
       const userId = authenticateToken(req);
 
-      const petugas = await client.query(
-        "SELECT * FROM petugas_parkir WHERE id = $1 AND idPengguna = $2",
+      // Cek apakah petugas ada dan milik pengguna yang benar
+      const petugas = await pool.query(
+        "SELECT * FROM petugas_parkirs WHERE id = $1 AND idPengguna = $2",
         [id, userId],
       );
 
@@ -125,52 +127,63 @@ module.exports = {
         return res.status(404).json({ message: "Petugas tidak ditemukan" });
       }
 
-      let fotoBukti = petugas.rows[0].bukti;
-
-      if (req.file) {
-        const uploadResult = await new Promise((resolve, reject) => {
-          cloudinary.uploader
-            .upload_stream(
-              { folder: "petugas_parkir", resource_type: "auto" },
-              (error, result) => {
-                if (error) return reject(error);
-                resolve(result.secure_url);
-              },
-            )
-            .end(req.file.buffer);
-        });
-
-        if (fotoBukti) {
-          const publicId = fotoBukti
-            .split("/")
-            .slice(-2)
-            .join("/")
-            .split(".")[0];
-          await cloudinary.uploader.destroy(publicId);
-        }
-
-        fotoBukti = uploadResult;
+      // Validasi status_post jika diberikan
+      if (
+        status_post &&
+        !["Approve", "Reject", "Pending"].includes(status_post)
+      ) {
+        return res.status(400).json({ message: "Status_post tidak valid" });
       }
 
-      await client.query(
-        "UPDATE petugas_parkir SET lokasi = $1, tanggaldanwaktu = $2, latitude = $3, longitude = $4, identitas_petugas = $5, hari = $6, status = $7, bukti = $8 WHERE id = $9",
-        [
-          lokasi,
-          new Date(tanggaldanwaktu),
-          parseFloat(latitude),
-          parseFloat(longitude),
-          identitas_petugas,
-          hari,
-          status,
-          fotoBukti,
-          id,
-        ],
-      );
+      // Query Update Dinamis
+      const fields = [];
+      const values = [];
+      let paramIndex = 1;
 
-      res.status(200).json({
-        message: "Data Petugas berhasil diperbarui",
-        bukti: fotoBukti,
-      });
+      if (lokasi) {
+        fields.push(`lokasi = $${paramIndex++}`);
+        values.push(lokasi);
+      }
+      if (tanggaldanwaktu) {
+        fields.push(`tanggaldanwaktu = $${paramIndex++}`);
+        values.push(new Date(tanggaldanwaktu));
+      }
+      if (latitude) {
+        fields.push(`latitude = $${paramIndex++}`);
+        values.push(parseFloat(latitude));
+      }
+      if (longitude) {
+        fields.push(`longitude = $${paramIndex++}`);
+        values.push(parseFloat(longitude));
+      }
+      if (identitas_petugas) {
+        fields.push(`identitas_petugas = $${paramIndex++}`);
+        values.push(identitas_petugas);
+      }
+      if (hari) {
+        fields.push(`hari = $${paramIndex++}`);
+        values.push(hari);
+      }
+      if (status_post) {
+        fields.push(`status_post = $${paramIndex++}`);
+        values.push(status_post);
+      } // Ganti ke status_post
+      if (bukti) {
+        fields.push(`bukti = $${paramIndex++}`);
+        values.push(bukti);
+      } // Base64 Image
+
+      if (fields.length === 0) {
+        return res
+          .status(400)
+          .json({ message: "Tidak ada data yang diperbarui" });
+      }
+
+      values.push(id);
+      const query = `UPDATE petugas_parkirs SET ${fields.join(", ")} WHERE id = $${paramIndex}`;
+      await client.query(query, values);
+
+      res.status(200).json({ message: "Data Petugas berhasil diperbarui" });
     } catch (error) {
       console.error("Error updating petugas:", error);
       res.status(500).json({

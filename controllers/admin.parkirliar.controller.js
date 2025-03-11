@@ -117,8 +117,8 @@ module.exports = {
 
     try {
       // Cek apakah laporan ada
-      const laporan = await client.query(
-        "SELECT * FROM parkir_liar WHERE id = $1",
+      const laporan = await pool.query(
+        "SELECT * FROM parkir_liars WHERE id = $1",
         [id],
       );
       if (laporan.rows.length === 0) {
@@ -182,7 +182,7 @@ module.exports = {
       }
 
       values.push(id);
-      const query = `UPDATE parkir_liar SET ${fields.join(", ")} WHERE id = $${paramIndex}`;
+      const query = `UPDATE parkir_liars SET ${fields.join(", ")} WHERE id = $${paramIndex}`;
       await client.query(query, values);
 
       res.status(200).json({ message: "Laporan Berhasil Diupdate" });
