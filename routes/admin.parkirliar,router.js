@@ -25,7 +25,7 @@ router.get(
 );
 router.get("/adminparkir/detail/:id", getLaporanById);
 router.post("/admin-parkir", upload.single("bukti"), addLaporan);
-router.patch("/admin-parkir/:id", upload.single("bukti"), updateLaporan);
+router.patch("/adminparkir/:id", upload.single("bukti"), updateLaporan);
 router.delete("/adminparkir/:id", upload.single("bukti"), deleteParkir);
 
 // admin approval
