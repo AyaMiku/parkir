@@ -94,7 +94,7 @@ module.exports = {
         gambarUrl: result.secure_url,
       });
     } catch (error) {
-      console.error("Terjadi kesalahan saat menambahkan laporan:", error);
+      console.error("Terjadi kesalahan saat menambahkan laporan baru:", error);
       res
         .status(500)
         .json({ message: "Gagal Menambahkan Laporan", error: error.message });
