@@ -90,7 +90,7 @@ module.exports = {
       );
 
       res.status(201).json({
-        message: "Berhasil Menambahkan Laporan",
+        message: "Berhasil Menambahkan Laporan Baru",
         gambarUrl: result.secure_url,
       });
     } catch (error) {
