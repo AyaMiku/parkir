@@ -130,6 +130,7 @@ module.exports = {
         deskripsi_masalah,
         hari,
         bukti,
+        nopol,
       } = req.body;
       const lokasi = String(req.body.lokasi).trim();
       const status_post = "Pending";
