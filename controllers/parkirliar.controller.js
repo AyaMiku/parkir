@@ -131,6 +131,7 @@ module.exports = {
         hari,
         bukti,
         nopol,
+        akurasi,
       } = req.body;
       const lokasi = String(req.body.lokasi).trim();
       const status_post = "Pending";
@@ -175,8 +176,8 @@ module.exports = {
       });
 
       const query = `
-                INSERT INTO parkir_liars ("idPengguna", jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, nopol, status, deskripsi_masalah, hari, bukti, status_post, "createdAt", "updatedAt")
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'Pending', NOW(), NOW())
+                INSERT INTO parkir_liars ("idPengguna", jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, nopol, status, deskripsi_masalah, hari, bukti, akurasi, status_post, "createdAt", "updatedAt")
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'Pending', NOW(), NOW())
                 RETURNING *;
             `;
 
@@ -192,6 +193,7 @@ module.exports = {
         deskripsi_masalah,
         hari,
         bukti,
+        akurasi,
       ];
 
       const { rows } = await pool.query(query, values);
@@ -225,7 +227,6 @@ module.exports = {
       longitude,
       lokasi,
       nopol,
-      status,
       deskripsi_masalah,
       hari,
     } = req.body;
@@ -254,15 +255,23 @@ module.exports = {
 
       console.log("📢 Response dari ML:", mlResponse.data);
 
-      // **Ambil prediksi dari ML**
       const status = mlResponse.data["Status Pelaporan"]?.[0];
+      const akurasi = mlResponse.data["Akurasi"]?.[0];
+
       if (!status || !["Liar", "Tidak Liar"].includes(status)) {
         return res.status(400).json({
           message: "Status dari API ML tidak valid atau tidak diterima",
         });
       }
 
+      if (typeof akurasi !== "number") {
+        return res.status(400).json({
+          message: "Nilai akurasi dari ML tidak valid",
+        });
+      }
+
       console.log("📌 Status ML setelah update:", status);
+      console.log("📌 Akurasi ML:", akurasi);
 
       if (!bukti || !bukti.startsWith("data:image")) {
         return res
@@ -271,7 +280,11 @@ module.exports = {
       }
 
       await client.query(
-        "UPDATE parkir_liars SET jenis_kendaraan = $1, tanggaldanwaktu = $2, latitude = $3, longitude = $4, lokasi = $5, nopol = $6, status = $7, deskripsi_masalah = $8, hari = $9, bukti = $10 WHERE id = $11",
+        `UPDATE parkir_liars
+         SET jenis_kendaraan = $1, tanggaldanwaktu = $2, latitude = $3, longitude = $4,
+             lokasi = $5, nopol = $6, status = $7, deskripsi_masalah = $8, hari = $9,
+             bukti = $10, akurasi = $11, "updatedAt" = NOW()
+         WHERE id = $12`,
         [
           jenis_kendaraan,
           new Date(tanggaldanwaktu),
@@ -283,6 +296,7 @@ module.exports = {
           deskripsi_masalah,
           hari,
           bukti,
+          akurasi,
           id,
         ],
       );
