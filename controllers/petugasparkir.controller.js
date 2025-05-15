@@ -123,13 +123,14 @@ module.exports = {
 
       const query = `
                 INSERT INTO petugas_parkirs
-                ("idPengguna", lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti, status_post, "createdAt", "updatedAt")
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+                ("idPengguna", nama, lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti, status_post, "createdAt", "updatedAt")
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
                 RETURNING *;
             `;
 
       const values = [
         idPengguna,
+        nama,
         lokasi,
         tanggaldanwaktu,
         latitude,
@@ -213,8 +214,9 @@ module.exports = {
 
       // Update data petugas di database
       await client.query(
-        "UPDATE petugas_parkir SET lokasi = $1, tanggaldanwaktu = $2, latitude = $3, longitude = $4, identitas_petugas = $5, hari = $6, status = $7, bukti = $8 WHERE id = $9",
+        "UPDATE petugas_parkir SET nama = $1, lokasi = $2, tanggaldanwaktu = $3, latitude = $4, longitude = $5, identitas_petugas = $6, hari = $7, status = $8, bukti = $9 WHERE id = $10",
         [
+          nama,
           lokasi,
           new Date(tanggaldanwaktu),
           parseFloat(latitude),
