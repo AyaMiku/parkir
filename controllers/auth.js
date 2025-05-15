@@ -100,7 +100,7 @@ module.exports = {
       console.log("📝 Menyimpan user ke database...");
       const newUser = await pool.query(
         `INSERT INTO "Users" (nama, email, jenis_kelamin, username, password, foto_profil, role, "createdAt", "updatedAt")
-                VALUES ($1, $2, $3, $4, $5, $6, $7, NOW()) RETURNING id, nama, email, username, foto_profil, role, "createdAt", "updatedAt"`,
+                VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW()) RETURNING id, nama, email, username, foto_profil, role, "createdAt", "updatedAt"`,
         [
           nama,
           email,
