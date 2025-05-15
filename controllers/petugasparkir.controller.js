@@ -70,6 +70,7 @@ module.exports = {
       }
 
       const {
+        nama,
         lokasi,
         tanggaldanwaktu,
         latitude,
@@ -113,6 +114,7 @@ module.exports = {
 
       console.log("📌 Data sebelum insert:", {
         idPengguna,
+        nama,
         lokasi,
         latitude,
         longitude,
@@ -161,6 +163,7 @@ module.exports = {
     try {
       const { id } = req.params;
       const {
+        nama,
         lokasi,
         tanggaldanwaktu,
         latitude,
