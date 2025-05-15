@@ -171,6 +171,132 @@ module.exports = {
     }
   },
 
+  updatePetugas: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const {
+        nama,
+        lokasi,
+        tanggaldanwaktu,
+        latitude,
+        longitude,
+        identitas_petugas,
+        hari,
+      } = req.body;
+      const userId = authenticateToken(req);
+
+      // Cek apakah petugas ada dan milik pengguna yang sesuai
+      const petugas = await client.query(
+        'SELECT * FROM petugas_parkirs WHERE id = $1 AND "idPengguna" = $2',
+        [id, userId],
+      );
+
+      if (petugas.rows.length === 0) {
+        return res
+          .status(404)
+          .json({ message: "Petugas tidak ditemukan atau bukan milik Anda" });
+      }
+
+      let fotoBukti = petugas.rows[0].bukti;
+
+      // Kirim data ke API ML untuk prediksi status dan akurasi
+      console.log("🔄 Mengirim data ke API ML untuk validasi...");
+      const mlResponse = await axios.post(
+        "https://lapor-parkir-ml.onrender.com/Petugas_parkir",
+        {
+          Identitas_Petugas: identitas_petugas,
+          Lokasi: lokasi,
+        },
+      );
+
+      console.log("📢 Response dari ML:", mlResponse.data);
+
+      const status = mlResponse.data["Status Pelaporan"]?.[0];
+      const akurasi = mlResponse.data["Akurasi"]?.[0];
+
+      if (!status || !["Liar", "Tidak Liar"].includes(status)) {
+        return res.status(400).json({
+          message: "Status dari API ML tidak valid atau tidak diterima",
+        });
+      }
+
+      if (typeof akurasi !== "number") {
+        return res.status(400).json({
+          message: "Nilai akurasi dari ML tidak valid",
+        });
+      }
+
+      console.log("📌 Status ML setelah update:", status);
+      console.log("📌 Akurasi ML setelah update:", akurasi);
+
+      if (req.file) {
+        const uploadResult = await new Promise((resolve, reject) => {
+          cloudinary.uploader
+            .upload_stream(
+              { folder: "petugas_parkir", resource_type: "auto" },
+              (error, result) => {
+                if (error) return reject(error);
+                resolve(result.secure_url);
+              },
+            )
+            .end(req.file.buffer);
+        });
+
+        // Hapus gambar lama di Cloudinary
+        if (fotoBukti) {
+          const publicId = fotoBukti
+            .split("/")
+            .slice(-2)
+            .join("/")
+            .split(".")[0];
+          await cloudinary.uploader.destroy(publicId);
+        }
+
+        fotoBukti = uploadResult;
+      }
+
+      // Update data petugas di database, termasuk kolom akurasi
+      await client.query(
+        `UPDATE petugas_parkirs
+         SET nama = $1,
+             lokasi = $2,
+             tanggaldanwaktu = $3,
+             latitude = $4,
+             longitude = $5,
+             identitas_petugas = $6,
+             hari = $7,
+             status = $8,
+             akurasi = $9,
+             bukti = $10
+         WHERE id = $11`,
+        [
+          nama,
+          lokasi,
+          new Date(tanggaldanwaktu),
+          parseFloat(latitude),
+          parseFloat(longitude),
+          identitas_petugas,
+          hari,
+          status,
+          akurasi,
+          fotoBukti,
+          id,
+        ],
+      );
+
+      res.status(200).json({
+        message: "Data Petugas berhasil diperbarui",
+        bukti: fotoBukti,
+      });
+    } catch (error) {
+      console.error("Error updating petugas:", error);
+      res.status(500).json({
+        message: "Gagal memperbarui data petugas",
+        error: error.message,
+      });
+    }
+  },
+
   deletePetugas: async (req, res) => {
     const { id } = req.params;
     try {
