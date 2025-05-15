@@ -174,8 +174,8 @@ module.exports = {
       });
 
       const query = `
-                INSERT INTO parkir_liars ("idPengguna", jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari, bukti, status_post, "createdAt", "updatedAt")
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'Pending', NOW(), NOW())
+                INSERT INTO parkir_liars ("idPengguna", jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, nopol, status, deskripsi_masalah, hari, bukti, status_post, "createdAt", "updatedAt")
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'Pending', NOW(), NOW())
                 RETURNING *;
             `;
 
@@ -186,6 +186,7 @@ module.exports = {
         latitude,
         longitude,
         lokasi,
+        nopol,
         status,
         deskripsi_masalah,
         hari,
@@ -268,13 +269,14 @@ module.exports = {
       }
 
       await client.query(
-        "UPDATE parkir_liars SET jenis_kendaraan = $1, tanggaldanwaktu = $2, latitude = $3, longitude = $4, lokasi = $5, status = $6, deskripsi_masalah = $7, hari = $8, bukti = $9 WHERE id = $10",
+        "UPDATE parkir_liars SET jenis_kendaraan = $1, tanggaldanwaktu = $2, latitude = $3, longitude = $4, lokasi = $5, nopol = $6, status = $7, deskripsi_masalah = $8, hari = $9, bukti = $10 WHERE id = $11",
         [
           jenis_kendaraan,
           new Date(tanggaldanwaktu),
           parseFloat(latitude),
           parseFloat(longitude),
           lokasi,
+          nopol,
           status,
           deskripsi_masalah,
           hari,
