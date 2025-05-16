@@ -136,7 +136,7 @@ module.exports = {
       const query = `
         INSERT INTO petugas_parkirs
         ("idPengguna", nama, lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, akurasi, bukti, status_post, "createdAt", "updatedAt")
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
         RETURNING *;
       `;
 
@@ -152,7 +152,7 @@ module.exports = {
         status,
         akurasi,
         bukti,
-        status_post,
+        status_post, // sekarang ini $13
       ];
 
       const { rows } = await pool.query(query, values);
