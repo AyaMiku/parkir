@@ -106,11 +106,14 @@ module.exports = {
         });
       }
 
-      if (typeof akurasi !== "number") {
+      if (typeof akurasi !== "number" && typeof akurasi !== "string") {
         return res.status(400).json({
           message: "Nilai akurasi dari ML tidak valid",
         });
       }
+
+      const akurasiStr =
+        typeof akurasi === "number" ? akurasi.toFixed(4) : akurasi.toString();
 
       console.log("📌 Prediksi ML:", status);
       console.log("📌 Akurasi ML:", akurasi);
@@ -150,7 +153,7 @@ module.exports = {
         identitas_petugas,
         hari,
         status,
-        akurasi,
+        akurasiStr,
         bukti,
         status_post,
       ];
@@ -220,11 +223,14 @@ module.exports = {
         });
       }
 
-      if (typeof akurasi !== "number") {
+      if (typeof akurasi !== "number" && typeof akurasi !== "string") {
         return res.status(400).json({
           message: "Nilai akurasi dari ML tidak valid",
         });
       }
+
+      const akurasiStr =
+        typeof akurasi === "number" ? akurasi.toFixed(4) : akurasi.toString();
 
       console.log("📌 Status ML setelah update:", status);
       console.log("📌 Akurasi ML setelah update:", akurasi);
@@ -278,7 +284,7 @@ module.exports = {
           identitas_petugas,
           hari,
           status,
-          akurasi,
+          akurasiStr,
           fotoBukti,
           id,
         ],
