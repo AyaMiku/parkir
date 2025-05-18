@@ -152,7 +152,7 @@ module.exports = {
         status,
         akurasi,
         bukti,
-        status_post, // sekarang ini $13
+        status_post,
       ];
 
       const { rows } = await pool.query(query, values);
