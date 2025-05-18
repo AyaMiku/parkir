@@ -91,6 +91,8 @@ module.exports = {
   updatePetugas: async (req, res) => {
     try {
       const { id } = req.params;
+      const userId = req.user?.id;
+
       const {
         lokasi,
         tanggaldanwaktu,
@@ -101,7 +103,6 @@ module.exports = {
         status_post,
         bukti,
       } = req.body;
-      const userId = authenticateToken(req);
 
       const petugas = await pool.query(
         "SELECT * FROM petugas_parkirs WHERE id = $1 AND idPengguna = $2",
@@ -150,11 +151,11 @@ module.exports = {
       if (status_post) {
         fields.push(`status_post = $${paramIndex++}`);
         values.push(status_post);
-      } // Ganti ke status_post
+      }
       if (bukti) {
         fields.push(`bukti = $${paramIndex++}`);
         values.push(bukti);
-      } // Base64 Image
+      }
 
       if (fields.length === 0) {
         return res
@@ -164,7 +165,7 @@ module.exports = {
 
       values.push(id);
       const query = `UPDATE petugas_parkirs SET ${fields.join(", ")} WHERE id = $${paramIndex}`;
-      await client.query(query, values);
+      await pool.query(query, values);
 
       res.status(200).json({ message: "Data Petugas berhasil diperbarui" });
     } catch (error) {
