@@ -74,7 +74,7 @@ module.exports = {
       });
 
       await pool.query(
-        "INSERT INTO parkir_liar (jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari, bukti, idUser) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+        "INSERT INTO parkir_liars (jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari, bukti, idUser) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
         [
           jenis_kendaraan,
           new Date(tanggaldanwaktu),
