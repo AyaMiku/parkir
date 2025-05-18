@@ -89,24 +89,22 @@ module.exports = {
   },
 
   updatePetugas: async (req, res) => {
+    const {
+      lokasi,
+      tanggaldanwaktu,
+      latitude,
+      longitude,
+      identitas_petugas,
+      hari,
+      status_post,
+      bukti,
+    } = req.body;
+    const { id } = req.params;
+
     try {
-      const { id } = req.params;
-      const userId = req.user?.id;
-
-      const {
-        lokasi,
-        tanggaldanwaktu,
-        latitude,
-        longitude,
-        identitas_petugas,
-        hari,
-        status_post,
-        bukti,
-      } = req.body;
-
       const petugas = await pool.query(
-        "SELECT * FROM petugas_parkirs WHERE id = $1 AND idPengguna = $2",
-        [id, userId],
+        "SELECT * FROM petugas_parkirs WHERE id = $1",
+        [id],
       );
 
       if (petugas.rows.length === 0) {
