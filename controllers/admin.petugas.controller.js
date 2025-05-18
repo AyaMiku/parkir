@@ -1,5 +1,4 @@
 const { Pool } = require("pg");
-const cloudinary = require("cloudinary").v2;
 const jwt = require("jsonwebtoken");
 const upload = require("../middleware/upload");
 
@@ -12,7 +11,6 @@ module.exports = {
     try {
       console.log(`📢 Akses diterima oleh Admin ID: ${req.user?.id}`);
 
-      // ✅ Query semua data petugas
       const result = await pool.query(
         "SELECT id, lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti FROM petugas_parkirs",
       );
@@ -63,19 +61,7 @@ module.exports = {
         return res.status(400).json({ message: "Gambar tidak ditemukan." });
       }
 
-      const result = await new Promise((resolve, reject) => {
-        cloudinary.uploader
-          .upload_stream(
-            { folder: "petugas_parkir", resource_type: "auto" },
-            (error, result) => {
-              if (error) return reject(error);
-              resolve(result);
-            },
-          )
-          .end(req.file.buffer);
-      });
-
-      await client.query(
+      await pool.query(
         "INSERT INTO petugas_parkir (lokasi, tanggaldanwaktu, latitude, longitude, identitas_petugas, hari, status, bukti, idPengguna) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
         [
           lokasi,
@@ -112,12 +98,11 @@ module.exports = {
         longitude,
         identitas_petugas,
         hari,
-        status_post, // Ganti dari status ke status_post
+        status_post,
         bukti,
       } = req.body;
       const userId = authenticateToken(req);
 
-      // Cek apakah petugas ada dan milik pengguna yang benar
       const petugas = await pool.query(
         "SELECT * FROM petugas_parkirs WHERE id = $1 AND idPengguna = $2",
         [id, userId],
@@ -127,7 +112,6 @@ module.exports = {
         return res.status(404).json({ message: "Petugas tidak ditemukan" });
       }
 
-      // Validasi status_post jika diberikan
       if (
         status_post &&
         !["Approve", "Reject", "Pending"].includes(status_post)
@@ -135,7 +119,6 @@ module.exports = {
         return res.status(400).json({ message: "Status_post tidak valid" });
       }
 
-      // Query Update Dinamis
       const fields = [];
       const values = [];
       let paramIndex = 1;

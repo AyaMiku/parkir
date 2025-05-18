@@ -24,7 +24,7 @@ router.get(
 );
 router.get("/adminpetugas/detail/:id", getPetugasById);
 router.post("/admin-petugas", upload.single("bukti"), addPetugas);
-router.patch("/admin-petugas/:id", upload.single("bukti"), updatePetugas);
+router.put("/adminpetugas/:id", upload.single("bukti"), updatePetugas);
 router.delete("/adminpetugas/:id", deletePetugas);
 
 // admin approval
