@@ -1,5 +1,4 @@
 const { Pool } = require("pg");
-const cloudinary = require("cloudinary").v2;
 const jwt = require("jsonwebtoken");
 
 const pool = new Pool({
@@ -61,18 +60,6 @@ module.exports = {
         return res.status(400).json({ message: "Gambar tidak ditemukan." });
       }
 
-      const result = await new Promise((resolve, reject) => {
-        cloudinary.uploader
-          .upload_stream(
-            { folder: "parkir_liar", resource_type: "auto" },
-            (error, result) => {
-              if (error) return reject(error);
-              resolve(result);
-            },
-          )
-          .end(req.file.buffer);
-      });
-
       await pool.query(
         "INSERT INTO parkir_liars (jenis_kendaraan, tanggaldanwaktu, latitude, longitude, lokasi, status, deskripsi_masalah, hari, bukti, idUser) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
         [
@@ -108,7 +95,7 @@ module.exports = {
       latitude,
       longitude,
       lokasi,
-      status_post, // Ganti dari 'status' ke 'status_post'
+      status_post,
       deskripsi_masalah,
       hari,
       bukti,
