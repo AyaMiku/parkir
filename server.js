@@ -29,7 +29,12 @@ cloudinary.config({
 // Middleware
 server.use(morgan("tiny"));
 
-server.use(cors());
+server.use(
+  cors({
+    origin: "http://localhost:5173",
+    method: ["GET", "PUT", "POST", "DELETE", "OPTIONS"],
+  }),
+);
 server.use(express.json({ limit: "50mb" }));
 server.use(express.urlencoded({ limit: "50mb", extended: true }));
 
