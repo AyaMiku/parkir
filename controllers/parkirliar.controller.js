@@ -131,8 +131,8 @@ module.exports = {
         hari,
         bukti,
         nopol,
-        akurasi,
       } = req.body;
+
       const lokasi = String(req.body.lokasi).trim();
       const status_post = "Pending";
 
@@ -154,13 +154,25 @@ module.exports = {
       console.log("📢 Response dari ML:", mlResponse.data);
 
       const status = mlResponse.data["Status Pelaporan"]?.[0];
+      const akurasi = mlResponse.data["Akurasi Prediksi"]?.[0];
+
       if (!status || !["Liar", "Tidak Liar"].includes(status)) {
         return res.status(400).json({
           message: "Status dari API ML tidak valid atau tidak diterima",
         });
       }
 
+      if (typeof akurasi !== "number" && typeof akurasi !== "string") {
+        return res.status(400).json({
+          message: "Nilai akurasi dari ML tidak valid",
+        });
+      }
+
+      const akurasiStr =
+        typeof akurasi === "number" ? akurasi.toFixed(4) : akurasi.toString();
+
       console.log("📌 Prediksi ML:", status);
+      console.log("📌 Akurasi ML:", akurasi);
 
       if (!bukti || !bukti.startsWith("data:image")) {
         return res
@@ -173,6 +185,8 @@ module.exports = {
         jenis_kendaraan,
         lokasi,
         deskripsi_masalah,
+        akurasi,
+        nopol,
       });
 
       const query = `
@@ -256,7 +270,7 @@ module.exports = {
       console.log("📢 Response dari ML:", mlResponse.data);
 
       const status = mlResponse.data["Status Pelaporan"]?.[0];
-      const akurasi = mlResponse.data["Akurasi"]?.[0];
+      const akurasi = mlResponse.data["Akurasi Prediksi"]?.[0];
 
       if (!status || !["Liar", "Tidak Liar"].includes(status)) {
         return res.status(400).json({
@@ -264,11 +278,14 @@ module.exports = {
         });
       }
 
-      if (typeof akurasi !== "number") {
+      if (typeof akurasi !== "number" && typeof akurasi !== "string") {
         return res.status(400).json({
           message: "Nilai akurasi dari ML tidak valid",
         });
       }
+
+      const akurasiStr =
+        typeof akurasi === "number" ? akurasi.toFixed(4) : akurasi.toString();
 
       console.log("📌 Status ML setelah update:", status);
       console.log("📌 Akurasi ML:", akurasi);

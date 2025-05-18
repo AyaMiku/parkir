@@ -215,7 +215,7 @@ module.exports = {
       console.log("📢 Response dari ML:", mlResponse.data);
 
       const status = mlResponse.data["Status Pelaporan"]?.[0];
-      const akurasi = mlResponse.data["Akurasi"]?.[0];
+      const akurasi = mlResponse.data["Akurasi Prediksi"]?.[0];
 
       if (!status || !["Liar", "Tidak Liar"].includes(status)) {
         return res.status(400).json({
