@@ -116,7 +116,6 @@ module.exports = {
     const { id } = req.params;
 
     try {
-      // Cek apakah laporan ada
       const laporan = await pool.query(
         "SELECT * FROM parkir_liars WHERE id = $1",
         [id],
@@ -125,7 +124,6 @@ module.exports = {
         return res.status(404).json({ message: "Laporan tidak ditemukan" });
       }
 
-      // Validasi status_post (jika diberikan)
       if (
         status_post &&
         !["Approve", "Reject", "Pending"].includes(status_post)
@@ -133,7 +131,6 @@ module.exports = {
         return res.status(400).json({ message: "Status_post tidak valid" });
       }
 
-      // Query Update Dinamis
       const fields = [];
       const values = [];
       let paramIndex = 1;
@@ -183,7 +180,7 @@ module.exports = {
 
       values.push(id);
       const query = `UPDATE parkir_liars SET ${fields.join(", ")} WHERE id = $${paramIndex}`;
-      await client.query(query, values);
+      await pool.query(query, values);
 
       res.status(200).json({ message: "Laporan Berhasil Diupdate" });
     } catch (error) {
