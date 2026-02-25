@@ -97,8 +97,8 @@ module.exports = {
 
       console.log("📢 Response dari ML:", mlResponse.data);
 
-      const status = mlResponse.data["Status Pelaporan"]?.[0];
-      const akurasi = mlResponse.data["Akurasi Prediksi"]?.[0];
+      const status = mlResponse.data["Status Pelaporan"];
+      const akurasi = mlResponse.data["Akurasi Prediksi"];
 
       if (!status || !["Liar", "Tidak Liar"].includes(status)) {
         return res.status(400).json({
