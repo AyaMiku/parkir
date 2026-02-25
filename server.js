@@ -20,7 +20,7 @@ client
 server.use(
   cors({
     origin: "http://localhost:5173",
-    method: ["GET", "PUT", "POST", "DELETE", "OPTIONS"],
+    methods: ["GET", "PUT", "POST", "DELETE", "OPTIONS"],
   }),
 );
 server.use(express.json({ limit: "50mb" }));
